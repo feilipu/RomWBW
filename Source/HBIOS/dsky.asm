@@ -3,24 +3,16 @@
 ; DSKY ROUTINES
 ;==================================================================================================
 ;
-PPIA		.EQU 	PPIBASE + 0	; PORT A
-PPIB		.EQU 	PPIBASE + 1	; PORT B
-PPIC		.EQU 	PPIBASE + 2	; PORT C
-PPIX	 	.EQU 	PPIBASE + 3	; PPI CONTROL PORT
+; THE DSKY MAY COSESIDE ON THE SAME PPI BUS AS A PPISD.  IT MAY NOT
+; SHARE A PPI BUS WITH A PPIDE.  SEE PPI_BUS.TXT FOR MORE INFORMATION.
 ;
-;		ICM7218A	KEYPAD		PPISD
-;		--------	--------	--------
-; PA0-7		IO0-7
-; PB0-5				COLS 0-5
-; PB6
-; PB7						DO (<SD)
-; PC0				ROW 0		DI (>SD)
-; PC1				ROW 1		CLK (>SD)
-; PC2-3				ROWS 2-3
-; PC4						/CS (PRI)
-; PC5						/CS (SEC)
-; PC6		/WR
-; PC7		MODE
+; LED SEGMENTS (BIT VALUES)
+;
+;	+--40--+
+;	02    20
+;	+--04--+
+;	08    10
+;	+--01--+  80
 ;
 ; DSKY SCAN CODES ARE ONE BYTE: CCRRRRRR
 ; BITS 7-6 IDENTFY THE COLUMN OF THE KEY PRESSED
@@ -33,6 +25,12 @@ PPIX	 	.EQU 	PPIBASE + 3	; PPI CONTROL PORT
 ; PB2 |	 $04 [4]    $44 [5]    $84 [6]	  $C4 [DE]
 ; PB1 |	 $02 [1]    $42 [2]    $82 [3]	  $C2 [EN]
 ; PB0 |	 $01 [FW]   $41 [0]    $81 [BK]	  $C1 [CL]
+;
+;
+PPIA		.EQU 	DSKYPPIBASE + 0	; PORT A
+PPIB		.EQU 	DSKYPPIBASE + 1	; PORT B
+PPIC		.EQU 	DSKYPPIBASE + 2	; PORT C
+PPIX	 	.EQU 	DSKYPPIBASE + 3	; PPI CONTROL PORT
 ;
 ;__DSKY_INIT_________________________________________________________________________________________
 ;
@@ -228,57 +226,68 @@ DSKY_KEYBUF	.DB	0
 #ENDIF	; DSKY_KBD
 ;
 ;==================================================================================================
-; DSKY HEX DISPLAY
+; CONVERT 32 BIT BINARY TO 8 BYTE HEX SEGMENT DISPLAY
 ;==================================================================================================
 ;
-DSKY_HEXOUT:
-	LD	B,DSKY_HEXBUFLEN
-	LD	HL,DSKY_BUF
-	LD	DE,DSKY_HEXBUF
-DSKY_HEXOUT1:
+; HL: ADR OF 32 BIT BINARY
+; DE: ADR OF DEST LED SEGMENT DISPLAY BUFFER (8 BYTES)
+;
+DSKY_BIN2SEG:
+	PUSH	HL
+	PUSH	DE
+	LD	B,4			; 4 BYTES OF INPUT
+	EX	DE,HL
+DSKY_BIN2SEG1:
 	LD	A,(DE)			; FIRST NIBBLE
 	SRL	A
 	SRL	A
 	SRL	A
 	SRL	A
+	PUSH	HL
+	LD	HL,DSKY_HEXMAP
+	CALL	DSKY_ADDHLA
+	LD	A,(HL)
+	POP	HL
 	LD	(HL),A
 	INC	HL
 	LD	A,(DE)			; SECOND NIBBLE
 	AND	0FH
+	PUSH	HL
+	LD	HL,DSKY_HEXMAP
+	CALL	DSKY_ADDHLA
+	LD	A,(HL)
+	POP	HL
 	LD	(HL),A
 	INC	HL
 	INC	DE			; NEXT BYTE
-	DJNZ	DSKY_HEXOUT1
-	LD	HL,DSKY_BUF
-	JR	DSKY_SHOWHEX
+	DJNZ	DSKY_BIN2SEG1
+	POP	DE
+	POP	HL
+	RET
 ;
 ;==================================================================================================
 ; DSKY SHOW BUFFER
 ;   HL: ADDRESS OF BUFFER
-;   ENTER @ SHOWHEX FOR HEX DECODING
-;   ENTER @ SHOWSEG FOR SEGMENT DECODING
 ;==================================================================================================
 ;
-DSKY_SHOWHEX:
-	LD	A,$D0			; 7218 -> (DATA COMING, HEXA DECODE)
-	JR	DSKY_SHOW
-;
-DSKY_SHOWSEG:
-	LD	A,$F0			; 7218 -> (DATA COMING, NO DECODE)
-	JR	DSKY_SHOW
-;
 DSKY_SHOW:
-	PUSH	AF			; SAVE 7218 CONTROL BITS
+	;;PUSH	AF			; SAVE 7218 CONTROL BITS
 	LD	A,82H			; SETUP PPI
 	OUT	(PPIX),A
 	CALL	DSKY_COFF
-	POP	AF
+	;;POP	AF
+	LD	A,$F0			; 7218 -> (DATA COMING, NO DECODE)
 	OUT	(PPIA),A
 	CALL	DSKY_STROBEC		; STROBE COMMAND
 	LD	B,DSKY_BUFLEN		; NUMBER OF DIGITS
 	LD	C,PPIA
 DSKY_HEXOUT2:
-	OUTI
+	;OUTI
+	LD	A,(HL)
+	XOR	$80			; FIX DOT POLARITY
+	OUT	(C),A
+	INC	HL
+	DEC	B
 	JP	Z,DSKY_STROBE		; DO FINAL STROBE AND RETURN
 	CALL	DSKY_STROBE		; STROBE BYTE VALUE
 	JR	DSKY_HEXOUT2
@@ -296,27 +305,42 @@ DSKY_COFF:
 ;	CALL	DSKY_DELAY		; WAIT
 	RET
 ;
-; CODES FOR NUMERICS
-; HIGH BIT ALWAYS SET TO SUPPRESS DECIMAL POINT
-; CLEAR HIGH BIT TO SHOW DECIMAL POINT
+;==================================================================================================
+; UTILTITY FUNCTIONS
+;==================================================================================================
 ;
-DSKY_NUMS:
-	.DB	$FB	; 0
-	.DB	$B0	; 1
-	.DB	$ED	; 2
-	.DB	$F5	; 3
-	.DB	$B6	; 4
-	.DB	$D7	; 5
-	.DB	$DF	; 6
-	.DB	$F0	; 7
-	.DB	$FF	; 8
-	.DB	$F7	; 9
-	.DB	$FE	; A
-	.DB	$9F	; B
-	.DB	$CB	; C
-	.DB	$BD	; D
-	.DB	$CF	; E
-	.DB	$CE	; F
+DSKY_ADDHLA:
+	ADD	A,L
+	LD	L,A
+	RET	NC
+	INC	H
+	RET
+;
+;==================================================================================================
+; STORAGE
+;==================================================================================================
+;
+; CODES FOR NUMERICS
+; HIGH BIT ALWAYS CLEAR TO SUPPRESS DECIMAL POINT
+; SET HIGH BIT TO SHOW DECIMAL POINT
+;
+DSKY_HEXMAP:
+	.DB	$7B	; 0
+	.DB	$30	; 1
+	.DB	$6D	; 2
+	.DB	$75	; 3
+	.DB	$36	; 4
+	.DB	$57	; 5
+	.DB	$5F	; 6
+	.DB	$70	; 7
+	.DB	$7F	; 8
+	.DB	$77	; 9
+	.DB	$7E	; A
+	.DB	$1F	; B
+	.DB	$4B	; C
+	.DB	$3D	; D
+	.DB	$4F	; E
+	.DB	$4E	; F
 ;
 ; SEG DISPLAY WORKING STORAGE
 ;

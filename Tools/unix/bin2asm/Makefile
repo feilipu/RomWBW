@@ -8,7 +8,7 @@ SRC_FILES = $(wildcard *.c)
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
 all: $(BINARY) $(DEST)
-	cp $(BINARY) $(DEST)
+	cp -p $(BINARY) $(DEST)
 
 $(DEST):
 	mkdir -p $(DEST)
@@ -16,9 +16,9 @@ $(DEST):
 .PHONY: clean
 
 clean:
-	rm -f $(OBJ_FILES)
+	rm -f $(OBJ_FILES) $(BINARY)
 
-clobber:
+clobber: clean
 	rm -f $(DEST)/$(BINARY) $(BINARY)
 
 $(BINARY): $(OBJ_FILES)

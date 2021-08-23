@@ -14,13 +14,13 @@ DEST = ../../$(UNAME)
 all: $(DEST)
 	-for i in *.$(SUFFIX) ; do \
 		chmod +x $$i ; \
-		cp $$i $(DEST)/$$(basename $$i .$(SUFFIX)) ; \
+		cp -p $$i $(DEST)/$$(basename $$i .$(SUFFIX)) ; \
 	done
 
 $(DEST):
 	mkdir $(DEST)
 
-clobber:
+clobber: clean
 	-for i in *.$(SUFFIX) ; do \
 		rm $(DEST)/$$(basename $$i .$(SUFFIX)) ; \
 	done

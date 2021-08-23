@@ -17,13 +17,13 @@ OBJECTS = zx.o cpmdrv.o cpmglob.o cpmparse.o cpmredir.o \
 UNUSED = dirent.o
 
 all: zx $(DEST)
-	cp bios.bin zx $(DEST)
+	cp -p bios.bin zx $(DEST)
 
 $(DEST):
 	mkdir -p $(DEST)
 
 clean:
-	-rm -f $(OBJECTS) config.h
+	-rm -f $(OBJECTS) config.h zx
 
 clobber: clean
 	-rm -f $(DEST)/zx $(DEST)/bios.bin zx

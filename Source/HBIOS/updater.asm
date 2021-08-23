@@ -4,10 +4,7 @@
 ; PROVIDES THE CAPABILTY TO UPDATE ROMWBW FROM THE SBC BOOT LOADER USING
 ; AN XMODEM FILE TRANSFER. 
 ;
-; TO INSTALL, SAVE THIS FILE AS USRROM.ASM IN \RomWBW\Source\HBIOS
-; AND REBUILD AND INSTALL THE NEW ROM VERSION.
-;
-; THE UPDATER CAN THEN BE ACCESSED USING THE "U" OPTION IN THE SBC BOOT LOADER.
+; THIS TOOL CAN BE LAUNCHED FROM THE ROMWBW BOOT LOADER USING OPTION 'X'.
 ;
 ; OPTION (C) AND (S) - CONSOLE AND SERIAL DEVICE
 ;
@@ -53,7 +50,7 @@
 ;   IF THE UPDATE FAILS IT IS RECOMMENDED THAT YOU RETRY BEFORE REBOOTING OR
 ;   EXITING TO THE SBC BOOT LOADER AS YOUR MACHINE MAY NOT BE BOOTABLE.
 ;
-; OPTION (X) - EXIT TO THE SBC BOOT LOADER. THE SBC IS RELOADED FROM ROM AND
+; OPTION (Q) - EXIT TO THE SBC BOOT LOADER. THE SBC IS RELOADED FROM ROM AND
 ;  EXECUTED. AFTER A SUCCESSFUL UPDATE A REBOOT SHOULD BE PERFORMED. HOWEVER,
 ;  IN THE CASE OF A FAILED UPDATE THIS OPTION COULD BE USED TO ATTEMPT TO
 ;  LOAD CP/M AND PERFORM THE NORMAL XMODEM / FLASH PROCESS TO RECOVER.
@@ -63,12 +60,13 @@
 ;  THE CURRENT FLASH. 
 ;
 ; OPTION (1) AND (2) - CALCULATE AND DISPLAY CRC32 OF 1ST OR 2ND 512K ROM.
+; OPTION (3) - CALCULATE AND DISPLAY CRC32 OF A 1024K ROM.
 ;
 ; OPTION (H) - DEBUG OPTION - SWITCH ON CPU CLOCK DIVIDER ON SBC-V2-004+
 ; OPTION (T) - DEBUG OPTION - TEST TIMER FOR 32S, 16S, 8S, 4S, 2S & 1S
 ;
 ;
-; V.DEV	18/1/2021	PHIL SUMMERS, DIFFICULTYLEVELHIGH@GMAIL.COM
+; V.DEV	23/7/2021	PHIL SUMMERS, DIFFICULTYLEVELHIGH@GMAIL.COM
 ;			b1ackmai1er ON RETROBREWCOMPUTERS.ORG
 ;
 ;
@@ -129,7 +127,7 @@ HBX_BNKSEL	.EQU	$FE2B
 ;
 XFUDBG		.EQU	0
 ;
-		.ORG    USR_LOC
+		.ORG    UPD_LOC
 ;
 ; ASCII codes
 ;
@@ -167,6 +165,9 @@ BSPC:		.EQU	'H'-40h		; ^H = Backspace
 	RST	08			; TO USE AS
 	LD	A,E			; DEFAULT
 	LD	(SERDEV),A
+
+	CALL	GETDINFO		; SAVE INITIAL
+	LD	(ORISPD),A		; SERIAL SPEED
 ;
 	LD	HL,msgHeader		; PRINT
 	CALL	PRTSTR0			; GREETING
@@ -174,54 +175,44 @@ BSPC:		.EQU	'H'-40h		; ^H = Backspace
 RESTART:
 	LD	DE,$0000		; SET UP START
 	LD	(MD_FBAS),DE		; BANK AND SECTOR
-
+;
 	LD	HL,MD_FIDEN		; IDENTIFY CHIP
 	CALL	MD_FNCALL		; AT THIS BANK/SECTOR
-
-	LD	HL,$B7BF		; IS IT A 39SF040
-	XOR	A
-	SBC	HL,BC	
-	LD	A,0
-	JR	Z,CHPFND		; YES IT IS ...
 ;
-	LD	HL,$A401		; IS IT A 29F040
-	XOR	A
+	LD	A,0-1			; SEARCH DEVICE
+	LD	HL,DEVICES		; TABLE FOR 
+NXTDEV:	LD	D,(HL)			; VALID DEVICE
+	INC	HL			; 
+	LD	E,(HL)
+	INC	HL
+	INC	A
+	CP	+((LSTDEV-DEVICES)/2)
+	JP	Z,FAILBC		; SUPPORTED CHIP NOT FOUND
+	OR	A
+	EX	DE,HL
 	SBC	HL,BC
-	LD	A,1
-	JR	Z,CHPFND		; YES IT IS ...
-;
-	LD	HL,$131F		; IS IT AN AT49F040
-	XOR	A
-	SBC	HL,BC
-	LD	A,2
-	JR	Z,CHPFND		; YES IT IS
-;
-	LD	HL,$A41F		; IS IT AN AT29C040
-	XOR	A
-	SBC	HL,BC
-	LD	A,3
-	JR	Z,CHPFND		; YES IT IS
-;
-	LD	HL,$E220		; IS IT AN M29F040
-	XOR	A
-	SBC	HL,BC
-	LD	A,4
-	JR	Z,CHPFND		; YES IT IS
-;
-	LD	HL,$A4C2		; IS IT AN MX29F040
-	SBC	HL,BC
-	LD	A,5
-;
-	JP	NZ,FAILBC		; SUPPORTED CHIP NOT FOUND
+	EX	DE,HL
+	JR	NZ,NXTDEV
 ;
 CHPFND:	LD	(ERATYP),A		; SAVE ERASE TYPE
-
+;
 	LD	BC,$F8F0		; GET CPU SPEED
 	RST	08			; AND MULTIPLY
 	LD	A,L			; BY 4
+	PUSH	AF
 	ADD	A,A			; TO CREATE
 	ADD	A,A			; TIMEOUT DELAY
 	LD	(TmoFct),A		; FACTOR 
+	POP	AF
+;
+	LD	HL,CLKTBL-1		; DETERMINE
+	ADD	A,L			; RECOMMENDED 
+	LD	L,A			; SPEED BASED
+	ADC	A,H			; ON CPU CLOCK
+	SUB	L			
+	LD	H,A                     ; LOOK IT
+	LD	A,(HL)                  ; UP IN THE
+	LD	(RECSPD),A              ; CLOCK TABLE
 ;
 MENULP:	LD	DE,$0000		; ENSURE WE ARE STARTING
 	LD	(MD_FBAS),DE		; AT BANK 0 SECTOR 0
@@ -232,13 +223,19 @@ MENULP:	LD	DE,$0000		; ENSURE WE ARE STARTING
 	CALL	MENU			; DISPLAY MENU
 	CALL	GETINP			; GET SELECTION
 ;
+	CP	'>'			; CHANGE TO
+	JP	Z,OPTIONG		; RECOMMENDED BAUD RATE
+;
+	CP	'<'			; REVERT TO
+	JP	Z,OPTIONL		; ORIGINAL BAUD RATE
+;
 	CP	'U'			; BEGIN
 	JR	Z,BEGUPD		; TRANSFER
 ;
 	CP	'V'			; CHECK FOR
 	JP	Z,OPTIONV		; VERIFY TOGGLE
 ;
-	CP	'X'			; CHECK FOR
+	CP	'Q'			; CHECK FOR
 	JP	Z,FAILUX		; USER EXIT
 ;
 	CP	'R'			; CHECK FOR
@@ -254,15 +251,15 @@ MENULP:	LD	DE,$0000		; ENSURE WE ARE STARTING
 	JP	Z,OPTIOND		; FLASH
 ;
 	CP	'1'			; CALCULATE
-	JP	Z,OPTION1		; CRC 512K FLASH
+	JP	Z,OPTION1		; CRC FLASH #1
 ;
 	CP	'2'			; CALCULATE
-	JP	Z,OPTION2		; CRC 1024K FLASH
+	JP	Z,OPTION2		; CRC FLASH #2
+;
+	CP	'2'			; CALCULATE
+	JP	Z,OPTION3		; CRC 1024K FLASH
 ;
 #IF	(XFUDBG)
-	CP	'3'			; CALCULATE
-	JP	Z,OPTION3		; CRC FLASH #2
-;
 	CP	'T'			; TEST TIMEOUT
 	JP	Z,OPTIONT		; LOOP
 ;
@@ -588,28 +585,40 @@ GETINP2:CALL	CONIN
 	AND	~$20			; CONVERT CHARACTER TO LOWER
 GETINP3:RET
 ;
-PRTSTR0:LD	A,(HL)			; PRINT MESSAGE POINTED TOP HL UNTIL 0
-	OR	A			; CHECK IF GOT ZERO?
-	RET	Z			; IF ZERO RETURN TO CALLER
-	LD 	C,A
-	CALL	CONOUT			; ELSE PRINT THE CHARACTER
-	INC	HL
-	JP	PRTSTR0
-;
 MENU:	CALL	COUTON	
 	LD	HL,msgConsole		; DISPLAY
 	CALL	PRTSTR0			; CONSOLE
 	LD	A,(CONDEV)		; DEVICE
+	PUSH	AF
 	ADD	A,'0'
 	LD	C,A
 	CALL	CONOUT
+	LD	C,' '
+	CALL	CONOUT
+	POP	AF
+	CALL	DISPBAUD
 ;
 	LD	HL,msgIODevice		; DISPLAY
 	CALL	PRTSTR0			; SERIAL
 	LD	A,(SERDEV)		; DEVICE
+	PUSH	AF
 	ADD	A,'0'
 	LD	C,A
 	CALL	CONOUT
+	LD	C,' '
+	CALL	CONOUT
+	POP	AF
+	CALL	DISPBAUD
+;
+	LD	HL,msgSetBaud		; DISPLAY
+	CALL	PRTSTR0			; RECOMMENDED
+	LD	A,(RECSPD)		; BAUD RATE
+	CALL	DECBAUD
+;
+	LD	HL,msgRevertBaud	; DISPLAY
+	CALL	PRTSTR0			; ORIGINAL
+	LD	A,(ORISPD)		; BAUD RATE
+	CALL	DECBAUD
 ;
 	LD	HL,msgWriteV		; DISPLAY
 	CALL	PRTSTR0			; VERIFY
@@ -622,6 +631,49 @@ MENU1:	CALL	PRTSTR0
 ;
 	LD	HL,msgBegin		; DISPLAY OTHER
 	CALL	PRTSTR0			; MENU OPTIONS
+	RET
+;
+;======================================================================
+; DISPLAY THE BAUD RATE FOR THE DEVICE SPECIFIED IN A
+;======================================================================
+;
+DISPBAUD:
+	CALL	GETDINFO		; GET DEVICE INFO
+	RET	NZ      		; EXIT IF NOT SERIAL
+DECBAUD:;CALL	PRTHEXB
+	BIT	4,A			; CONVERT	; IF X > 15 X=(X-15)*2 
+	JR	Z,UNDER15		; DEVICE	; ELSE X=(X*2)-1 
+	AND	%00001111		; BAUD
+	INC	A			; CODE TO
+	ADD	A,A			; TABLE
+	JR	WASOVER			; INDEX
+UNDER15:AND	%00001111	
+	ADD	A,A
+	DEC	A
+WASOVER:;CALL	PRTHEXB
+	LD	DE,BAUDTBL		; DISPLAY
+	CALL	PRTIDXDEA		; BAUD RATE
+	RET
+;
+;	GET DEVICE INFO FOR DEVICE SPECIFIED IN A
+;	RETURN NZ FLAG IF NON SERIAL. 
+;	RETURN Z FLAG IF SERIAL DEVICE AND A CONTAINING ENCODED BAUD BYTE
+;
+GETDINFO:
+	PUSH	AF
+	LD	C,A
+	LD	B,$06			; GET
+	RST	08			; DEVICE
+	LD	A,C			; TYPE
+	POP	BC
+	OR	A			; EXIT IF
+	RET	NZ			; NOT SERIAL
+;
+	LD	C,B			; GET
+	LD	B,$05			; DEVICE
+	RST	08			; INFO
+	XOR	A
+	LD	A,D
 	RET
 ;
 OPTIOND:CALL	COUTON			; TURN ON OUTPUT
@@ -711,6 +763,48 @@ NOVER1:	LD	HL,MD_BANK		; RESET TO CHIP #1
 VERF:	POP	BC			; EXIT WITH FAIL
 	POP	BC			; FAIL MESSAGE AND 
 	JP	FAILWF			; RETURN TO MENU
+;
+OPTIONG:LD	HL,msgChangeNow		; CHANGE
+	CALL	PRTSTR0			; SERIAL
+	LD	A,(RECSPD)		; DEVICE 
+	PUSH	AF			; BAUD RATE
+	CALL	DECBAUD			; TO RECOMMENDED
+	LD	HL,msgPressKey
+	CALL	PRTSTR0
+	POP	AF
+	CALL	CHGSPD
+	CALL	GETINP	
+	JP	MENULP	
+;
+OPTIONL:LD	HL,msgChangeNow		; CHANGE
+	CALL	PRTSTR0			; SERIAL
+	LD	A,(ORISPD)		; DEVICE
+	PUSH	AF			; BAUD RATE
+	CALL	DECBAUD			; TO ORIGINAL
+	LD	HL,msgPressKey
+	CALL	PRTSTR0
+	POP	AF
+	CALL	CHGSPD	
+	CALL	GETINP	
+	JP	MENULP	
+;
+CHGSPD:	PUSH	AF
+	LD	B,$05			; GET SERIAL DEVICE 
+	LD	A,(SERDEV)		; CHARACTERISTICS
+	LD	C,A
+	RST	08
+	LD	A,D			; MASK OUT EXISTING
+	AND	%11100000		; REPLACE WITH RATE
+	LD	D,A
+	POP	AF
+	OR	D
+	LD	D,A
+;	
+	LD	B,$04			; SET NEW
+	LD	A,(SERDEV)		; SPEED
+	LD	C,A
+	RST	08
+	RET
 ;
 OPTIONV:LD	A,(WRTVER)		; TOGGLE
 	CPL				; VERIFY
@@ -838,6 +932,10 @@ OPTIONE:LD	HL,msgErase		; DISPLAY
 	JP	Done1
 #ENDIF
 ;
+;======================================================================
+; CONSOLE AND SERIAL I/O ROUTINES
+;======================================================================
+;
 SEROUT:	PUSH	HL			; SERIAL OUTPUT CHARACTER IN C
 	PUSH	DE
 	PUSH	BC
@@ -919,7 +1017,12 @@ CONIN:	PUSH	HL			; CONSOLE INPUT. WAIT FOR A CHARACTER ADD RETURN IT IN A
 	POP	HL
 	RET
 ;
+;======================================================================
+; TEXT OUTPUT ROUTINES
+;======================================================================
+;
 PRTHEXB:PUSH	AF			; PRINT HEX BYTE IN A TO CONSOLE
+	PUSH	BC
 	PUSH	DE
 	CALL	HEXASC
 	LD	C,D
@@ -927,6 +1030,7 @@ PRTHEXB:PUSH	AF			; PRINT HEX BYTE IN A TO CONSOLE
 	LD	C,E
 	CALL	CONOUT
 	POP	DE
+	POP	BC
 	POP	AF
 	RET
 
@@ -948,18 +1052,66 @@ HEXCONV:AND	0FH			; CONVERT LOW NIBBLE OF A TO ASCII HEX
 	ADC	A,40H
 	DAA
 	RET
-
-OPTION3:LD	HL,$1000		; CRC32 STARTING
-	LD	(MD_FBAS),HL            ; BANK $10 SECTOR $00
-	LD	B,16                    ; 16 BANKS (512K)
-	JR	CALCCRC	
-
+;
+; PRINT 0 TERMINATED STRING POINTED TO BY HL
+;
+PRTSTR0:LD	A,(HL)			; PRINT MESSAGE POINTED TOP HL UNTIL 0
+	OR	A			; CHECK IF GOT ZERO?
+	RET	Z			; IF ZERO RETURN TO CALLER
+	LD 	C,A
+	CALL	CONOUT			; ELSE PRINT THE CHARACTER
+	INC	HL
+	JP	PRTSTR0
+;
+; PRINT $ TERMINATED STRING POINTED TO BY HL
+;
+PRTSTRD:LD	A,(HL)			; PRINT MESSAGE POINTED TOP HL UNTIL $
+	CP	'$'			; CHECK IF GOT IT?
+	RET	Z			; IF MATCH RETURN TO CALLER
+	LD 	C,A
+	CALL	CONOUT			; ELSE PRINT THE CHARACTER
+	INC	HL
+	JP	PRTSTRD
+;
+; PRINT THE nTH STRING IN A LIST OF STRINGS WHERE EACH IS TERMINATED BY $
+; A REGISTER DEFINES THE nTH STRING IN THE LIST TO PRINT AND DE POINTS
+; TO THE START OF THE STRING LIST.
+;
+PRTIDXDEA:
+	PUSH	BC
+	LD	C,A			; INDEX COUNT
+	OR	A
+	LD	A,0
+PRTIDXDEA1:
+	JR	Z,PRTIDXDEA3
+PRTIDXDEA2:
+	LD	A,(DE)			; LOOP UNIT
+	INC	DE			; WE REACH
+	CP	'$'			; END OF STRING
+	JR	NZ,PRTIDXDEA2
+	DEC	C			; AT STRING END. SO GO
+	JR	PRTIDXDEA1		; CHECK FOR INDEX MATCH
+PRTIDXDEA3:
+	POP	BC
+	EX	DE,HL
+	CALL	PRTSTRD			; FALL THROUGH TO WRITESTR
+	RET
+;
+;======================================================================
+; CRC OPTIONS AND CALCULATIONS 
+;======================================================================
+;
 OPTION1:LD	HL,$0000		; CRC32 STARTING
 	LD	(MD_FBAS),HL		; BANK $00 SECTOR $00
 	LD	B,16			; 16 BANKS (512K)
 	JR	CALCCRC
 ;
-OPTION2:LD	HL,$0000		; CRC32 STARTING
+OPTION2:LD	HL,$1000		; CRC32 STARTING
+	LD	(MD_FBAS),HL            ; BANK $10 SECTOR $00
+	LD	B,16                    ; 16 BANKS (512K)
+	JR	CALCCRC	
+;
+OPTION3:LD	HL,$0000		; CRC32 STARTING
 	LD	(MD_FBAS),HL		; BANK $00 SECTOR $00
 	LD	B,32			; 32 BANKS (1024K)
 ;
@@ -971,8 +1123,7 @@ CALCCRC:CALL	COUTON			; TURN ON OUTPUT
 	LD	HL,$FFFF		; SET THE
 	LD	(CRC),HL		; START CRC
 	LD	(CRC+2),HL		; CONDITION
-
-;	LD	B,16			; 
+;
 CRCLP1:	PUSH	BC			; LOOP THROUGH ALL BANKS
 	LD	B,8			; LOOP THROUGH
 CRCLP2:	PUSH	BC			; 8 SECTORS
@@ -1050,8 +1201,38 @@ CLEAR:	DEC	B
 	JP	NZ,BYTELP
 	LD	(CRC),DE
 	LD	(CRC+2),HL
-
 	RET
+;
+; multiply DE:HL by 10, exit wit C set if overflwo
+;
+multb10:call	multb2		; x2
+	ret	c
+	push	de
+	push	hl
+	call	multb2		; x4
+	ret	c
+	call	multb2		; x8
+	ret	c
+;
+	pop	bc		; x8 + 2
+	add	hl,bc
+	pop	bc
+	jr	nc,multbc
+	inc	de
+	ret	c
+multbc:	ex	de,hl
+	add	hl,bc
+	ex	de,hl
+	ret
+
+multb2:	ex	de,hl		; multiply by 2
+	add	hl,hl
+	ret	c
+	ex	de,hl
+	add	hl,hl
+	jr	nc,multbnc
+	inc	de
+multbnc:ret
 ;
 ;======================================================================
 ; CALCULATE BANK AND ADDRESS DATA FROM MEMORY ADDRESS
@@ -1168,22 +1349,27 @@ msgCRC32:	.DB	CR,LF,CR,LF,"CRC32 : ",0
 msgFailWrt:	.DB	CR,LF,"FLASH WRITE FAILED",CR,LF,0
 msgFailure:	.DB	CR,LF,"TRANSMISSION FAILED",CR,LF,0
 msgCancel:	.DB	CR,LF,"TRANSMISSION CANCELLED",CR,LF,0
+msgChangeNow:	.DB	CR,LF,"Change speed now to ",0
+msgPressKey:	.DB	CR,LF,"Press a key to Resume.",CR,LF,0
 msgConsole:	.DB	CR,LF,CR,LF,"(C) Set Console Device  : ",0
 msgIODevice:	.DB	CR,LF,"(S) Set Serial Device   : ",0
+msgSetBaud:	.DB	CR,LF,"(>) Set Recommended Baud Rate : ",0
+msgRevertBaud:	.DB	CR,LF,"(<) Revert to Original Baud Rate : ",0
 msgWriteV:	.DB	CR,LF,"(V) Toggle Write Verify : ",0
 msgBegin:	.DB	CR,LF,"(R) Reboot"
 		.DB	CR,LF,"(U) Begin Update"
-		.DB	CR,LF,"(X) Exit to Rom Loader"
+		.DB	CR,LF,"(Q) Quit to Rom Loader"
 		.DB	CR,LF,"(D) Duplicate Flash #1 to #2"
-		.DB	CR,LF,"(1) CRC 512K Flash"
-		.DB	CR,LF,"(2) CRC 1024K Flash"
+		.DB	CR,LF,"(1) CRC 512K Flash #1"
+		.DB	CR,LF,"(2) CRC 512K Flash #2"
+		.DB	CR,LF,"(3) CRC 1024K Flash"
 #IF	(XFUDBG)
 		.DB	CR,LF,"(H) Select half speed"
 		.DB	CR,LF,"(T) Test timeout"
 		.DB	CR,LF,"(F) Dump Debug Data"
 		.DB	CR,LF,"(E) Erase Flash chip #1"
 		.DB	CR,LF,"(Z) Erase Flash chip #2"
-		.DB	CR,LF,"(3) CRC Flash chip #2"
+
 #ENDIF
 		.DB	CR,LF,CR,LF,"Select : ",0
 msgSuccess:	.DB	CR,LF,CR,LF,"COMPLETED WITHOUT ERRORS ",CR,LF,0
@@ -1204,6 +1390,9 @@ WRTVER:		.DB	$FF		; WRITE VERIFY OPTION FLAG
 VERRES:		.DB	$00		; WRITE VERIFY RESULT
 BLKCOUT:	.DB	$FF		; BLOCK TEXT OUTPUT DURING TRANSFER IF ZERO
 ERATYP		.DB	$00		; HOLDS THE ERASE TYPE FLAG FOR VARIOUS CHIPS
+;CPUSPD:		.DB	0		; HOLDS CURRENT PROCESSOR SPEED
+ORISPD:		.DB	0		; HOLDS ORIGINAL BAUD RATE SPEED
+RECSPD:		.DB	0		; HOLDS RECOMMENDED BAUD RATE SPEED
 oldSP:		.DW	0		; The orginal SP to be restored before exiting
 retrycnt:	.DB 	0		; Counter for retries before giving up
 chksum:		.DB	0		; For calculating the checksum of the packet
@@ -1221,11 +1410,88 @@ packet:		.DB 	0		; SOH
 		.FILL	128,0		; data*128,
 		.DB	0 		; chksum
 ;
+;======================================================================
+; SUPPORTED DEVICES AND ID CODES
+;======================================================================
+;
+DEVICES:
+	.DW	$BFB7			; 39SF040  0
+	.DW	$01A4			; 29F040   1
+	.DW	$1F13			; AT49F040 2
+	.DW	$1FA4			; AT29C040 3
+	.DW	$20E2			; M29F040  4
+	.DW	$C2A4			; MX29F040 5
+	.DW	$37A4			; A29010B  6
+	.DW	$3786			; A29040B  7
+LSTDEV:	.EQU	$
+;
+;======================================================================
+; BAUD RATE TABLE
+;======================================================================
+;
+BAUDTBL:.DB	"75$"			; 0    0  
+	.DB	"150$"			; 1    1  
+	.DB	"225$"			; 2   16  
+	.DB	"300$"			; 3    2  
+	.DB	"450$"			; 4   17
+	.DB	"600$"			; 5    3  
+	.DB	"900$"			; 6   18  
+	.DB	"1200$"			; 7    4  
+	.DB	"1800$"			; 8   19
+	.DB	"2400$"			; 9    5  
+	.DB	"3600$"			; 10  20
+	.DB	"4800$"			; 11   6  
+	.DB	"7200$"			; 12  21
+	.DB	"9600$"			; 13   7  
+	.DB	"14400$"		; 14  22  
+	.DB	"19200$"		; 15   8  
+	.DB	"28800$"		; 16  23
+	.DB	"38400$"		; 17   9  
+	.DB	"57600$"		; 18  24
+	.DB	"76800$"		; 19  10  
+	.DB	"115200$"		; 20  25
+	.DB	"153600$"		; 21  11  
+	.DB	"230400$"		; 22  26
+	.DB	"307200$"		; 23  12  
+	.DB	"460800$"		; 24  27
+	.DB	"614400$"		; 25  13  
+	.DB	"921600$"		; 26  28
+	.DB	"1228800$"		; 27  14  
+	.DB	"1843200$"		; 28  29  
+	.DB	"2457600$"		; 29  15  
+	.DB	"3686400$"		; 30  30  
+	.DB	"7372800$"		; 31  16 
+;
+;======================================================================
+; CLOCK SETTING TABLE
+;======================================================================
+;
+CLKTBL:	.DB	6		; 1   4800
+	.DB	7		; 2   9600
+	.DB	7		; 3   9600
+	.DB	8		; 4  19200
+	.DB	8		; 5  19200
+	.DB	8		; 6  19200
+	.DB	8		; 7  19200
+	.DB	9		; 8  38400
+	.DB	9		; 9  38400
+	.DB	9		; 10 38400
+	.DB	9		; 11 38400
+	.DB	9		; 12 38400
+	.DB	9		; 13 38400
+	.DB	9		; 14 38400
+	.DB	9		; 15 38400
+	.DB	9		; 16 38400
+	.DB	9		; 17 38400
+	.DB	9		; 18 38400
+	.DB	9		; 19 38400
+	.DB	9		; 20 38400
+;
 sector4k:	.EQU	$		; 32 PACKETS GET ACCUMULATED HERE BEFORE FLASHING
 ;
-SLACK		.EQU	(USR_END - $)
+SLACK		.EQU	(UPD_END - $)
 		.FILL	SLACK,$FF
-		.ECHO	"User ROM space remaining: "
+		.ECHO	"ROM Updater space remaining: "
 		.ECHO	SLACK
 		.ECHO	" bytes.\n"
 		.END

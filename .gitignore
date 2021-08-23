@@ -81,9 +81,8 @@ Tools/unix/zx/zx
 !Source/BPBIOS/Z34RCP11/cledinst.com
 !Source/BPBIOS/Z34RCP11/cledsave.com
 !Source/Fonts
-!Source/Images/**/*.[Cc][Oo][Mm]
-!Source/Images/hdnew_prefix.bin
-!Source/RomDsk/**/*.[Cc][Oo][Mm]
+!Source/Images/**
+!Source/RomDsk/**
 !Source/UBIOS/FSFAT.BIN
 !Source/UBIOS/UNA-BIOS.BIN
 !Source/ZCCP/*.[Cc][Oo][Mm]
@@ -91,9 +90,11 @@ Tools/unix/zx/zx
 !Source/ZPM3/*.[Cc][Oo][Mm]
 !Source/ZSDOS/*.[Cc][Oo][Mm]
 !Source/ZRC/*.bin
-!Tools/cpm/bin
-!Tools/unix/zx
-!Tools/zx
+!Source/ZZR/*.bin
+!Source/ZZR/*.hex
+!Tools/cpm/bin/*
+!Tools/unix/zx/*
+!Tools/zx/*
 
 Source/ZPM3/gencpm.com
 Source/ZPM3/startzpm.com

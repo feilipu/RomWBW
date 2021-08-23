@@ -208,7 +208,15 @@ prompt:
 #if (DSKYENABLE)
 	call	DSKY_RESET		; clear DSKY
 	ld	hl,msg_sel		; boot select msg
-	call	DSKY_SHOWSEG		; show on DSKY
+	call	DSKY_SHOW		; show on DSKY
+
+ #IF (DSKYMODE == DSKYMODE_NG)
+	call 	DSKY_PUTLED
+	.db 	$3f,$3f,$3f,$3f,$00,$00,$00,$00
+	call 	DSKY_BEEP
+	call 	DSKY_L2ON
+ #ENDIF
+
 #endif
 ;
 wtkey:
@@ -259,6 +267,14 @@ clrbuf1:
 ;
 concmd:
 	call	clrled			; clear LEDs
+;
+#if (DSKYENABLE)
+  #if (DSKYMODE == DSKYMODE_NG)
+	call 	DSKY_PUTLED
+	.db 	$00,$00,$00,$00,$00,$00,$00,$00
+	call 	DSKY_L2OFF
+  #endif
+#endif
 ;
 	; Get a command line from console and handle it
 	call	rdln			; get a line from the user
@@ -360,6 +376,12 @@ dskycmd:
 	call	DSKY_GETKEY		; get DSKY key
 	cp	$FF			; check for error
 	ret	z			; abort if so
+;
+  #if (DSKYMODE == DSKYMODE_NG)
+	call 	DSKY_PUTLED
+	.db 	$00,$00,$00,$00,$00,$00,$00,$00
+	call 	DSKY_L2OFF
+  #endif
 ;
 	; Attempt built-in commands
 	cp	KY_BO			; reboot system
@@ -491,10 +513,10 @@ iseven:	dec	a			; 15=19200
 	add	a,16			; 20=115200
 setspd:	ld	(newspeed),a		; save validated baud rate
 ;
-	ld	hl,str_chspeed		; notify user 
+	ld	hl,str_chspeed		; notify user
 	call	pstr			; to change
 	call	cin			; speed
-;	
+;
 	; Get the current settings for chosen console
 	ld	b,BF_CIOQUERY		; BIOS serial device query
 	ld	a,(newcon)		; get device unit num
@@ -503,7 +525,7 @@ setspd:	ld	(newspeed),a		; save validated baud rate
 	jp	nz,err_invcmd		; abort on error
 ;
 	ld	a,d			; mask off current
-	and	$11100000		; baud rate 
+	and	$11100000		; baud rate
 	ld	hl,newspeed		; and load in new
 	or	(hl)			; baud rate
 	ld	d,a
@@ -584,7 +606,7 @@ reboot:
 ;
 #if (DSKYENABLE)
 	ld	hl,msg_boot		; point to boot message
-	call	DSKY_SHOWSEG		; display message
+	call	DSKY_SHOW		; display message
 #endif
 ;
 	; cold boot system
@@ -616,7 +638,7 @@ romload:
 ;
 #if (DSKYENABLE)
 	ld	hl,msg_load		; point to load message
-	call	DSKY_SHOWSEG		; display message
+	call	DSKY_SHOW		; display message
 #endif
 ;
 #if (BIOS == BIOS_WBW)
@@ -648,7 +670,7 @@ romload1:
 	; Record boot information
 	pop	af			; recover source bank
 	ld	l,a			; L := source bank
-	ld	de,$0100		; boot volume/slice
+	ld	de,$0000		; boot vol=0, slice=0
 	ld	b,BF_SYSSET		; HBIOS func: system set
 	ld	c,BF_SYSSET_BOOTINFO	; BBIOS subfunc: boot info
 	rst	08			; do it
@@ -700,7 +722,7 @@ romload1:
 ;
 #if (DSKYENABLE)
 	ld	hl,msg_go		; point to go message
-	call	DSKY_SHOWSEG		; display message
+	call	DSKY_SHOW		; display message
 #endif
 ;
 	ld	l,(ix+ra_ent)		; HL := app entry address
@@ -725,7 +747,7 @@ diskboot:
 ;
 #if (DSKYENABLE)
 	ld	hl,msg_load		; point to load message
-	call	DSKY_SHOWSEG		; display message
+	call	DSKY_SHOW		; display message
 #endif
 ;
 #if (BIOS == BIOS_WBW)
@@ -1009,7 +1031,7 @@ diskboot10:
 ;
 #if (DSKYENABLE)
 	ld	hl,msg_go		; point to go message
-	call	DSKY_SHOWSEG		; display message
+	call	DSKY_SHOW		; display message
 #endif
 ;
 	; Jump to entry vector
@@ -1078,8 +1100,16 @@ clrled:
 	out	(DIAGPORT),a	; clear diag leds
   #endif
   #if (LEDENABLE)
-	or	$FF		; led is inverted
+    #if (LEDMODE == LEDMODE_STD)
+	ld	a,$FF		; led is inverted
 	out	(LEDPORT),a	; clear led
+    #endif
+    #if (LEDMODE == LEDMODE_RTC)
+	; Only bits 0 and 1 of the RTC latch are for the LEDs.  Here,
+	; we assume that it is OK to zero all bits of the RTC latch.
+	xor	a		; turn off
+	out	(LEDPORT),a	; clear led
+    #endif
   #endif
 #endif
 	ret
@@ -1903,9 +1933,14 @@ str_err_api	.db	"Unexpected hardware BIOS API failure",0
 ;
 #if (DSKYENABLE)
 #define	DSKY_KBD
+  #if (DSKYMODE == DSKYMODE_V1)
 VDELAY	.equ	vdelay
 DLY2	.equ	dly2
 #include "dsky.asm"
+  #endif
+  #if (DSKYMODE == DSKYMODE_NG)
+#include "dskyng.asm"
+  #endif
 #endif
 ;
 ;=======================================================================
@@ -1957,10 +1992,18 @@ str_help	.db	"\r\n"
 		.db	0
 ;
 #if (DSKYENABLE)
-msg_sel		.db	$ff,$9d,$9d,$8f,$ec,$80,$80,$80	; "boot?   "
-msg_boot	.db	$ff,$9d,$9d,$8f,$00,$00,$00,$80	; "boot... "
-msg_load	.db	$8b,$9d,$fd,$bd,$00,$00,$00,$80	; "load... "
-msg_go		.db	$db,$9d,$00,$00,$00,$80,$80,$80	; "go...   "
+  #if (DSKYMODE == DSKYMODE_V1)
+msg_sel		.db	$7f,$1d,$1d,$0f,$6c,$00,$00,$00	; "boot?   "
+msg_boot	.db	$7f,$1d,$1d,$0f,$80,$80,$80,$00	; "boot... "
+msg_load	.db	$0b,$1d,$7d,$3d,$80,$80,$80,$00	; "load... "
+msg_go		.db	$5b,$1d,$80,$80,$80,$00,$00,$00	; "go...   "
+  #endif
+  #if (DSKYMODE == DSKYMODE_NG)
+msg_sel		.db	$7f,$5c,$5c,$78,$53,$00,$00,$00	; "boot?   "
+msg_boot	.db	$7f,$5c,$5c,$78,$80,$80,$80,$00	; "boot... "
+msg_load	.db	$38,$5c,$5f,$5e,$80,$80,$80,$00	; "load... "
+msg_go		.db	$3d,$5c,$80,$80,$80,$00,$00,$00	; "go...   "
+  #endif
 #endif
 ;
 ;=======================================================================
@@ -2039,35 +2082,36 @@ ra_ent		.equ	12
 ;
 ra_tbl:
 ;
-;      Name	  Key	   Dsky	  Bank	    Src	   Dest	    Size     Entry
-;      ---------  -------  -----  --------  -----  -------  -------  ----------
-ra_ent(str_mon,	  'M',	   KY_CL, BID_IMG0, $1000, MON_LOC, MON_SIZ, MON_SERIAL)
+;      Name	  Key	   Dsky	  Bank	    Src	         Dest	    Size     Entry
+;      ---------  -------  -----  --------  -----        -------  -------  ----------
+ra_ent(str_mon,	  'M',	   KY_CL, BID_IMG0, MON_IMGLOC,  MON_LOC, MON_SIZ, MON_SERIAL)
 ra_entsiz	.equ	$ - ra_tbl
-ra_ent(str_cpm22, 'C',	   KY_BK, BID_IMG0, $2000, CPM_LOC, CPM_SIZ, CPM_ENT)
-ra_ent(str_zsys,  'Z',	   KY_FW, BID_IMG0, $5000, CPM_LOC, CPM_SIZ, CPM_ENT)
+ra_ent(str_zsys,  'Z',	   KY_FW, BID_IMG0, ZSYS_IMGLOC, CPM_LOC, CPM_SIZ, CPM_ENT)
+ra_ent(str_cpm22, 'C',	   KY_BK, BID_IMG0, CPM_IMGLOC,  CPM_LOC, CPM_SIZ, CPM_ENT)
 #if (BIOS == BIOS_WBW)
-ra_ent(str_fth,	  'F',	   KY_EX, BID_IMG1, $0000, FTH_LOC, FTH_SIZ, FTH_LOC)
-ra_ent(str_bas,	  'B',	   KY_DE, BID_IMG1, $1700, BAS_LOC, BAS_SIZ, BAS_LOC)
-ra_ent(str_tbas,  'T',	   KY_EN, BID_IMG1, $3700, TBC_LOC, TBC_SIZ, TBC_LOC)
-ra_ent(str_play,  'P',	   $FF,	  BID_IMG1, $4000, GAM_LOC, GAM_SIZ, GAM_LOC)
-ra_ent(str_user,  'U',	   $FF,	  BID_IMG1, $7000, USR_LOC, USR_SIZ, USR_LOC)
+ra_ent(str_fth,	  'F',	   KY_EX, BID_IMG1, FTH_IMGLOC,  FTH_LOC, FTH_SIZ, FTH_LOC)
+ra_ent(str_bas,	  'B',	   KY_DE, BID_IMG1, BAS_IMGLOC,  BAS_LOC, BAS_SIZ, BAS_LOC)
+ra_ent(str_tbas,  'T',	   KY_EN, BID_IMG1, TBC_IMGLOC,  TBC_LOC, TBC_SIZ, TBC_LOC)
+ra_ent(str_play,  'P',	   $FF,	  BID_IMG1, GAM_IMGLOC,  GAM_LOC, GAM_SIZ, GAM_LOC)
+ra_ent(str_egg,	  'E'+$80, $FF,   BID_IMG1, EGG_IMGLOC,  EGG_LOC, EGG_SIZ, EGG_LOC)
+ra_ent(str_net,   'N',	   $FF,	  BID_IMG1, NET_IMGLOC,  NET_LOC, NET_SIZ, NET_LOC)
+ra_ent(str_upd,   'X',	   $FF,	  BID_IMG1, UPD_IMGLOC,  UPD_LOC, UPD_SIZ, UPD_LOC)
+ra_ent(str_user,  'U',	   $FF,	  BID_IMG1, USR_IMGLOC,  USR_LOC, USR_SIZ, USR_LOC)
 #endif
 #if (DSKYENABLE)
-ra_ent(str_dsky,  'Y'+$80, KY_GO, bid_cur,  $1000, MON_LOC, MON_SIZ, MON_DSKY)
+ra_ent(str_dsky,  'Y'+$80, KY_GO, BID_IMG0, MON_IMGLOC,  MON_LOC, MON_SIZ, MON_DSKY)
 #endif
-ra_ent(str_egg,	  'E'+$80, $FF	, bid_cur,  $0E00, EGG_LOC, EGG_SIZ, EGG_LOC)
 		.dw	0		; table terminator
 ;
 ra_tbl_app:
 ;
-;      Name	  Key	   Dsky	  Bank	    Src	   Dest	    Size     Entry
-;      ---------  -------  -----  --------  -----  -------  -------  ----------
-ra_ent(str_mon,	  'M',	   KY_CL, bid_cur,  $1000, MON_LOC, MON_SIZ, MON_SERIAL)
-ra_ent(str_zsys,  'Z',	   KY_FW, bid_cur,  $2000, CPM_LOC, CPM_SIZ, CPM_ENT)
+;      Name	  Key	   Dsky	  Bank	    Src	         Dest	    Size     Entry
+;      ---------  -------  -----  --------  -----       -------  -------  ----------
+ra_ent(str_mon,	  'M',	   KY_CL, bid_cur,  MON_IMGLOC,  MON_LOC, MON_SIZ, MON_SERIAL)
+ra_ent(str_zsys,  'Z',	   KY_FW, bid_cur,  ZSYS_IMGLOC,  CPM_LOC, CPM_SIZ, CPM_ENT)
 #if (DSKYENABLE)
-ra_ent(str_dsky,  'Y'+$80, KY_GO, bid_cur,  $1000, MON_LOC, MON_SIZ, MON_DSKY)
+ra_ent(str_dsky,  'Y'+$80, KY_GO, bid_cur,  MON_IMGLOC,  MON_LOC, MON_SIZ, MON_DSKY)
 #endif
-ra_ent(str_egg,	  'E'+$80, $FF	, bid_cur,  $0E00, EGG_LOC, EGG_SIZ, EGG_LOC)
 		.dw	0		; table terminator
 ;
 str_mon		.db	"Monitor",0
@@ -2078,10 +2122,36 @@ str_fth		.db	"Forth",0
 str_bas		.db	"BASIC",0
 str_tbas	.db	"Tasty BASIC",0
 str_play	.db	"Play a Game",0
+str_upd		.db	"XModem Flash Updater",0
 str_user	.db	"User App",0
 str_egg		.db	"",0
+str_net		.db	"Network Boot",0
 newcon		.db	0
 newspeed	.db	0
+;
+;=======================================================================
+; Working data storage
+;=======================================================================
+;
+		.fill	64,0		; 32 level stack
+bl_stack	.equ	$		; ... top is here
+;
+#if (BIOS == BIOS_WBW)
+bid_ldr		.db	0		; bank at startup
+#endif
+#if (BIOS == BIOS_UNA)
+bid_ldr		.dw	0		; bank at startup
+#endif
+;
+lba		.fill	4,0		; lba for load, dword
+dma		.dw	0		; address for load
+sps		.dw	0		; sectors per slice
+mediaid		.db	0		; media id
+;
+ra_tbl_loc	.dw	0		; points to active ra_tbl
+bootunit	.db	0		; boot disk unit
+bootslice	.db	0		; boot disk slice
+loadcnt		.db	0		; num disk sectors to load
 ;
 ;=======================================================================
 ; Pad remainder of ROM Loader
@@ -2094,29 +2164,16 @@ slack		.equ	($8000 + LDR_SIZ - $)
 		.echo	slack
 		.echo	" bytes.\n"
 ;
+;
 ;=======================================================================
-; Working data storage (uninitialized)
+; Disk buffers (uninitialized)
 ;=======================================================================
 ;
-		.ds	64		; 32 level stack
-bl_stack	.equ	$		; ... top is here
+; Master Boot Record sector is read into area below.
+; Note that this buffer is actually shared with bl_infosec
+; buffer below.
 ;
-#if (BIOS == BIOS_WBW)
-bid_ldr		.ds	1		; bank at startup
-#endif
-#if (BIOS == BIOS_UNA)
-bid_ldr		.ds	2		; bank at startup
-#endif
-;
-lba		.ds	4		; lba for load, dword
-dma		.ds	2		; address for load
-sps		.ds	2		; sectors per slice
-mediaid		.ds	1		; media id
-;
-ra_tbl_loc	.ds	2		; points to active ra_tbl
-bootunit	.ds	1		; boot disk unit
-bootslice	.ds	1		; boot disk slice
-loadcnt		.ds	1		; num disk sectors to load
+bl_mbrsec	.equ	$
 ;
 ; Boot info sector is read into area below.
 ; The third sector of a disk device is reserved for boot info.
@@ -2144,11 +2201,5 @@ bb_biloc	.ds	2		; loc to patch boot drive info
 bb_cpmloc	.ds	2		; final ram dest for cpm/cbios
 bb_cpmend	.ds	2		; end address for load
 bb_cpment	.ds	2		; CP/M entry point (cbios boot)
-;
-;
-; Master Boot Record sector is read into area below.
-;
-bl_mbrsec	.equ	$
-		.ds	512
 ;
 	.end

@@ -53,16 +53,19 @@ UART_ENTRY:
 ;
 ;__SERIAL_MONITOR_COMMANDS____________________________________________________
 ;
-; B - BOOT SYSTEM
-; D XXXX YYYY - DUMP MEMORY FROM XXXX TO YYYY
-; F XXXX YYYY ZZ - FILL MEMORY FROM XXXX TO YYYY WITH ZZ
-; I XX - SHOW VALUE AT PORT XX
-; K - ECHO KEYBOARD INPUT
-; L - LOAD INTEL HEX FORMAT DATA
-; M XXXX YYYY ZZZZ - MOVE MEMORY BLOCK XXXX-YYYY TO ZZZZ
-; O XX YY - WRITE VALUE YY TO PORT XX
-; P XXXX - PROGRAM RAM STARTING AT XXXX, PROMPT FOR VALUES
-; R XXXX - RUN A PROGRAM AT ADDRESS XXXX
+; B			- BOOT SYSTEM
+; D XXXX YYYY		- DUMP MEMORY IN RANGE XXXX-YYYY
+; F XXXX YYYY ZZ	- FILL MEMORY IN RANGE XXXX-YYYY WITH ZZ
+; H			- HALT SYSTEM
+; I XXXX		- SHOW VALUE AT PORT XXXX
+; K			- ECHO KEYBOARD INPUT
+; L			- LOAD INTEL HEX FORMAT DATA
+; M XXXX YYYY ZZZZ	- MOVE MEMORY BLOCK XXXX-YYYY TO ZZZZ
+; O XXXX YY		- OUTPUT VALUE YY TO PORT XX
+; P XXXX		- PROGRAM RAM STARTING AT XXXX, PROMPT FOR VALUES
+; R XXXX		- RUN A PROGRAM AT ADDRESS XXXX
+; S XX			- SET ACTIVE BANK TO XX
+; X			- EXIT MONITOR
 ;
 ;__COMMAND_PARSE______________________________________________________________
 ;
@@ -71,8 +74,14 @@ UART_ENTRY:
 ;
 SERIALCMDLOOP:
 	LD	SP,MON_STACK		; RESET STACK
-	LD	HL,TXT_PROMPT		;
-	CALL	PRTSTR			;
+	CALL	NEWLINE
+#IF (BIOS == BIOS_WBW)
+	LD	A,($FFE0)
+	CALL	PRTHEXBYTE
+#ENDIF
+	LD	A,'>'
+	CALL	COUT
+
 	LD	HL,KEYBUF		; SET POINTER TO KEYBUF AREA
 	CALL 	GETLN			; GET A LINE OF INPUT FROM THE USER
 	LD	HL,KEYBUF		; RESET POINTER TO START OF KEYBUF
@@ -102,10 +111,14 @@ SERIALCMDLOOP:
 	JP	Z,MOVEMEM		; MOVE MEMORY COMMAND
 	CP	'F'			; IS IT A "F" (Y/N)
 	JP	Z,FILLMEM		; FILL MEMORY COMMAND
-	CP	'H'			; IS IT A "H" (Y/N)
+	CP	'?'			; IS IT A "?" (Y/N)
 	JP	Z,HELP			; HELP COMMAND
-	CP	'S'			; IS IT A "H" (Y/N)
-	JP	Z,STOP			; STOP COMMAND
+	CP	'H'			; IS IT A "H" (Y/N)
+	JP	Z,HALT			; HALT COMMAND
+#IF (BIOS == BIOS_WBW)
+	CP	'S'			; IS IT A "S" (Y/N)
+	JP	Z,SETBNK		; SET BANK COMMAND
+#ENDIF
 	CP	'X'			; IS IT A "X" (Y/N)
 	JP	Z,EXIT			; EXIT COMMAND
 	LD	HL,TXT_COMMAND		; POINT AT ERROR TEXT
@@ -135,7 +148,7 @@ INITIALIZE:
 #IF DSKYENABLE
 	LD	B,BF_SYSGET		; HBIOS FUNC=GET SYS INFO
 	LD	C,BF_SYSGET_CPUINFO	; HBIOS SUBFUNC=GET CPU INFO
-	RST	08			; CALL HBIOS
+	CALL	$FFF0			; CALL HBIOS
 	LD	A,L			; PUT SPEED IN MHZ IN ACCUM
 	CALL	DELAY_INIT
 #ENDIF
@@ -176,14 +189,36 @@ EXIT:
 	CALL	$FFF0			; CALL HBIOS
 #ENDIF
 ;
-;__STOP_______________________________________________________________________
+;__HALT_______________________________________________________________________
 ;
-;	PERFORM STOP ACTION (HALT SYSTEM)
+;	PERFORM HALT ACTION
 ;_____________________________________________________________________________
 ;
-STOP:
+HALT:
 	DI
 	HALT
+;
+;__SETBNK_____________________________________________________________________
+;
+;	PERFORM SET BANK ACTION
+;_____________________________________________________________________________
+;
+#IF (BIOS == BIOS_WBW)
+;
+SETBNK:
+#IF (INTMODE == 1)
+	LD	HL,TXT_IMERR
+	CALL	PRTSTR
+#ELSE
+	CALL	BYTEPARM		; GET BANK NUMBER
+	JP	C,ERR			; HANDLE DATA ENTRY ERROR
+	LD	C,A			; PUT IN C FOR FOR FUNC CALL
+	LD	B,BF_SYSSETBNK		; SET BANK FUNCTION
+	CALL	$FFF0			; C HAS BANK, DO IT
+#ENDIF
+	JP	SERIALCMDLOOP		; NEXT COMMAND
+;
+#ENDIF
 ;
 ;__RUN________________________________________________________________________
 ;
@@ -371,7 +406,7 @@ DUMPMEM:
 	CALL	WORDPARM		; GET END ADDRESS
 	JP	C,ERR			; HANDLE ERRORS
 	PUSH	DE			; SAVE IT
-	
+
 	POP	DE			; DE := END ADDRESS
 	POP	HL			; HL := START ADDRESS
 
@@ -488,7 +523,7 @@ FILLMEM:
 	CALL	NONBLANK		; LOOK FOR EXTRANEOUS PARAMETERS
 	CP	0			; TEST FOR TERMINATING NULL
 	JP	NZ,ERR			; ERROR IF NOT TERMINATING NULL
-	
+
 	POP	DE			; END ADR TO DE
 	POP	HL			; START ADR TO HL
 	DEC	HL			; PRE-DECREMENT
@@ -788,7 +823,7 @@ COUT:
 	; OUTPUT CHARACTER TO CONSOLE VIA UBIOS
 	LD	E,A
 	LD	BC,$12
-	RST	08
+	CALL	$FFFD
 ;
 	; RESTORE ALL REGISTERS
 	POP	HL
@@ -810,7 +845,7 @@ CIN:
 ;
 	; INPUT CHARACTER FROM CONSOLE VIA UBIOS
 	LD	BC,$11
-	RST	08
+	CALL	$FFFD
 	LD	A,E
 ;
 	; RESTORE REGISTERS (AF IS OUTPUT)
@@ -832,7 +867,7 @@ CST:
 ;
 	; GET CONSOLE INPUT STATUS VIA UBIOS
 	LD	BC,$13
-	RST	08
+	CALL	$FFFD
 	LD	A,E
 ;
 	; RESTORE REGISTERS (AF IS OUTPUT)
@@ -859,7 +894,7 @@ COUT:
 	LD	E,A			; OUTPUT CHAR TO E
 	LD	C,CIO_CONSOLE		; CONSOLE UNIT TO C
 	LD	B,BF_CIOOUT		; HBIOS FUNC: OUTPUT CHAR
-	RST	08			; HBIOS OUTPUTS CHARACTER
+	CALL	$FFF0			; HBIOS OUTPUTS CHARACTER
 ;
 	; RESTORE ALL REGISTERS
 	POP	HL
@@ -882,7 +917,7 @@ CIN:
 	; INPUT CHARACTER FROM CONSOLE VIA HBIOS
 	LD	C,CIO_CONSOLE		; CONSOLE UNIT TO C
 	LD	B,BF_CIOIN		; HBIOS FUNC: INPUT CHAR
-	RST	08			; HBIOS READS CHARACTER
+	CALL	$FFF0			; HBIOS READS CHARACTER
 	LD	A,E			; MOVE CHARACTER TO A FOR RETURN
 ;
 	; RESTORE REGISTERS (AF IS OUTPUT)
@@ -905,7 +940,7 @@ CST:
 	; GET CONSOLE INPUT STATUS VIA HBIOS
 	LD	C,CIO_CONSOLE		; CONSOLE UNIT TO C
 	LD	B,BF_CIOIST		; HBIOS FUNC: INPUT STATUS
-	RST	08			; HBIOS RETURNS STATUS IN A
+	CALL	$FFF0			; HBIOS RETURNS STATUS IN A
 ;
 	; RESTORE REGISTERS (AF IS OUTPUT)
 	POP	HL
@@ -927,34 +962,41 @@ KEYBUF:  	.FILL	BUFLEN,0
 ;	SYSTEM TEXT STRINGS
 ;_____________________________________________________________________________
 ;
-TXT_PROMPT	.TEXT	"\r\n>$"
+;TXT_PROMPT	.TEXT	"\r\n>$"
 TXT_READY	.TEXT	"\r\n\r\nMonitor Ready$"
 TXT_COMMAND	.TEXT	"\r\nUnknown Command$"
 TXT_ERR		.TEXT	"\r\nSyntax Error$"
+TXT_IMERR	.TEXT	"\r\nCommand not available under interrupt mode 1$"
 TXT_CKSUMERR	.TEXT	"\r\nChecksum Error$"
 TXT_RECORDERR	.TEXT	"\r\nRecord Type Error$"
 TXT_LOADED	.TEXT	"\r\nLoaded$"
 TXT_BADNUM	.TEXT	" *Invalid Hex Byte Value*$"
-TXT_MINIHELP	.TEXT	" (H for Help)$"
+TXT_MINIHELP	.TEXT	" (? for Help)$"
 TXT_HELP	.TEXT	"\r\nMonitor Commands (all values in hex):"
 		.TEXT	"\r\nB                - Boot system"
 		.TEXT	"\r\nD xxxx yyyy      - Dump memory from xxxx to yyyy"
 		.TEXT	"\r\nF xxxx yyyy zz   - Fill memory from xxxx to yyyy with zz"
-		.TEXT	"\r\nI xx             - Input from port xx"
+		.TEXT	"\r\nH                - Halt system"
+		.TEXT	"\r\nI xxxx           - Input from port xxxx"
 		.TEXT	"\r\nK                - Keyboard echo"
 		.TEXT	"\r\nL                - Load Intel hex data"
 		.TEXT	"\r\nM xxxx yyyy zzzz - Move memory block xxxx-yyyy to zzzz"
-		.TEXT	"\r\nO xx yy          - Output to port xx value yy"
-		.TEXT	"\r\nP xxxx           - Program RAM at xxxx"
-		.TEXT	"\r\nR xxxx           - Run code at xxxx"
-		.TEXT	"\r\nS                - Stop system (HALT)"
+		.TEXT	"\r\nO xxxx yy        - Output value yy to port xxxx"
+		.TEXT	"\r\nP xxxx           - Program RAM at address xxxx"
+		.TEXT	"\r\nR xxxx           - Run code at address xxxx"
+		.TEXT	"\r\nS xx             - Set bank to xx"
 		.TEXT	"\r\nX                - Exit monitor"
 		.TEXT	"$"
 ;
 #IF DSKYENABLE
 ;
-#DEFINE DSKY_KBD
+#DEFINE	DSKY_KBD
+  #IF (DSKYMODE == DSKYMODE_V1)
 #INCLUDE "dsky.asm"
+  #ENDIF
+  #IF (DSKYMODE == DSKYMODE_NG)
+#INCLUDE "dskyng.asm"
+  #ENDIF
 ;
 KY_PR	.EQU	KY_FW		; USE [FW] FOR [PR] (PORT READ)
 KY_PW	.EQU	KY_BK		; USE [BW] FOR [PW] (PORT WRITE)
@@ -976,6 +1018,11 @@ DSKY_ENTRY:
 ;_____________________________________________________________________________
 ;
 	CALL    DSKY_INIT		; INIT 8255
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_BEEP
+  #ENDIF
+
 ;
 ;__COMMAND_PARSE______________________________________________________________
 ;
@@ -984,9 +1031,18 @@ DSKY_ENTRY:
 ;
 FRONTPANELLOOP:
 	LD	HL,CPUUP		; SET POINTER TO CPU UP MSG
-	CALL	DSKY_SHOWSEG		; DISPLAY UNENCODED
+	CALL	DSKY_SHOW		; DISPLAY UNENCODED
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTCMDKEYS
+	CALL 	DSKY_L1ON
+  #ENDIF
 
 	CALL	KB_GET			; GET KEY FROM KB
+
+ #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_L1OFF
+  #ENDIF
 
 FRONTPANELLOOP1:
 	CP	KY_PR			; IS PORT READ?
@@ -1011,7 +1067,7 @@ FRONTPANELLOOP1:
 ;
 DOBOOT:
 	LD	HL,MSGBOOT		; SET POINTER TO BOOT MESSAGE
-	CALL	DSKY_SHOWSEG		; DISPLAY UNENCODED
+	CALL	DSKY_SHOW		; DISPLAY UNENCODED
 	JP	BOOT			; DO BOOT
 ;
 ;__DOPORTREAD_________________________________________________________________
@@ -1022,6 +1078,11 @@ DOBOOT:
 ;_____________________________________________________________________________
 ;
 DOPORTREAD:
+
+ #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTNUMKEYS
+  #ENDIF
+
 	CALL 	GETPORT			; GET PORT INTO A
 PORTREADLOOP:
 	LD	C,A			; STORE PORT IN "C"
@@ -1044,6 +1105,11 @@ PORTREADGETKEY:
 ;_____________________________________________________________________________
 ;
 DOPORTWRITE:
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTNUMKEYS
+  #ENDIF
+
 	CALL 	GETPORT			; GET PORT INTO A
 PORTWRITELOOP:
 	LD	L,A			; SAVE PORT NUM
@@ -1065,7 +1131,17 @@ PORTWRITEGETKEY:
 ;_____________________________________________________________________________
 ;
 DOGO:
+
+#IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTNUMKEYS
+  #ENDIF
+
 	CALL 	GETADDR			; GET ADDRESS INTO HL
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTKEYSOFF
+  #ENDIF
+
 	PUSH	HL			; EXEC ADR TO TOS
 	LD	HL,GOTO			; POINT TO "GO" MSG
 	CALL	INITBUF
@@ -1086,6 +1162,11 @@ DOGO:
 ;_____________________________________________________________________________
 ;
 DOEXAMINE:
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTNUMKEYS
+  #ENDIF
+
 	CALL 	GETADDR			; GET ADDRESS INTO HL
 EXAMINELOOP:
 	LD	DE,DISPLAYBUF+0
@@ -1101,6 +1182,11 @@ EXAMINELOOP:
 	LD	A,(HL)			; GET VALUE FROM ADDRESS IN HL
 	CALL	PUTVALUE
 	CALL	ENCDISPLAY		; DISPLAY BUFFER ON DISPLAYS
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTFWDKEYS
+  #ENDIF
+
 EXAMINEGETKEY:
 	CALL	KB_GET			; GET KEY FROM KB
 	CP	KY_EN			; [EN] PRESSED, INC ADDRESS AND LOOP
@@ -1118,6 +1204,11 @@ EXAMINEFW:
 ;_____________________________________________________________________________
 ;
 DODEPOSIT:
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTNUMKEYS
+  #ENDIF
+
 	CALL 	GETADDR			; GET ADDRESS INTO HL
 DEPOSITLOOP:
 	LD	DE,DISPLAYBUF+0
@@ -1134,6 +1225,11 @@ DEPOSITLOOP:
 	LD	DE,DISPLAYBUF+6		; DISPLAY WRITTEN MEM VALUE
 	CALL	PUTVALUE		; ... WITHOUT DP'S
 	CALL	ENCDISPLAY		; DISPLAY BUFFER CONTENTS
+
+  #IF (DSKYMODE == DSKYMODE_NG)
+	CALL 	DSKY_HIGHLIGHTFWDKEYS
+  #ENDIF
+
 DEPOSITGETKEY:
 	CALL	KB_GET			; GET KEY FROM KB
 	CP	KY_EN			; [EN] PRESSED, INC ADDRESS AND LOOP
@@ -1352,7 +1448,7 @@ ENCBUF1:
 	INC	HL			; BUMP TO NEXT BYTE FOR NEXT PASS
 	PUSH	AF			; SAVE IT
 	AND	$80			; ISOLATE HI BIT (DP)
-	XOR	$80			; FLIP IT
+	;XOR	$80			; FLIP IT
 	LD	C,A			; SAVE IN C
 	POP	AF			; RECOVER ORIGINAL
 	AND	$7F			; REMOVE HI BIT (DP)
@@ -1366,15 +1462,17 @@ ENCBUF1:
 	POP	HL			; RESTORE POINTER
 	DJNZ	ENCBUF1			; LOOP THRU ALL BUF POSITIONS
 	LD	HL,DSKY_BUF		; POINT TO DECODED BUFFER
-	CALL	DSKY_SHOWSEG		; DISPLAY IT
+	CALL	DSKY_SHOW		; DISPLAY IT
 	POP	DE			; RESTORE DE
 	POP	BC			; RESTORE BC
 	POP	AF			; RESTORE AF
 	POP	HL			; RESTORE HL
 	RET
 ;
-CPUUP	.DB 	$84,$CB,$EE,$BB,$80,$BB,$EE,$84	; "-CPU UP-" (RAW SEG)
-MSGBOOT	.DB	$FF,$9D,$9D,$8F,$20,$80,$80,$80 ; "Boot!   " (RAW SEG)
+#IF (DSKYMODE == DSKYMODE_V1)
+;
+CPUUP	.DB 	$04,$4B,$6E,$3B,$00,$3B,$6E,$04	; "-CPU UP-" (RAW SEG)
+MSGBOOT	.DB	$7F,$1D,$1D,$0F,$A0,$00,$00,$00 ; "Boot!   " (RAW SEG)
 ADDR	.DB	$17,$18,$19,$10,$00,$00,$00,$00	; "Adr 0000" (ENCODED)
 PORT	.DB	$13,$14,$15,$16,$10,$10,$00,$00	; "Port  00" (ENCODED)
 GOTO	.DB	$1A,$14,$10,$10,$00,$00,$00,$00	; "Go  0000" (ENCODED)
@@ -1385,6 +1483,7 @@ GOTO	.DB	$1A,$14,$10,$10,$00,$00,$00,$00	; "Go  0000" (ENCODED)
 ;_____________________________________________________________________________
 ;
 SEGDECODE:
+;
 	; POS	$00  $01  $02  $03  $04  $05  $06  $07
 	; GLYPH '0'  '1'  '2'  '3'  '4'  '5'  '6'  '7'
 	.DB	$7B, $30, $6D, $75, $36, $57, $5F, $70
@@ -1396,6 +1495,59 @@ SEGDECODE:
 	; POS	$10  $11  $12  $13  $14  $15  $16  $17  $18  $19  $1A
 	; GLYPH	' '  '-'  '.'  'P'  'o'  'r'  't'  'A'  'd'  'r'  'G'
 	.DB	$00, $04, $00, $6E, $1D, $0C, $0F, $7E, $3D, $0C, $5B
+;
+#ENDIF
+;
+#IF (DSKYMODE == DSKYMODE_NG)
+;
+CPUUP	.DB 	$40,$39,$73,$3E,$00,$3E,$73,$40	; "-CPU UP-" (RAW SEG)
+MSGBOOT	.DB	$7F,$5C,$5C,$78,$A0,$00,$00,$00 ; "Boot!   " (RAW SEG)
+ADDR	.DB	$17,$18,$19,$10,$00,$00,$00,$00	; "Adr 0000" (ENCODED)
+PORT	.DB	$13,$14,$15,$16,$10,$10,$00,$00	; "Port  00" (ENCODED)
+GOTO	.DB	$1A,$14,$10,$10,$00,$00,$00,$00	; "Go  0000" (ENCODED)
+;
+;_HEX_7_SEG_DECODE_TABLE______________________________________________________
+;
+; SET BIT 7 TO DISPLAY W/ DECIMAL POINT
+;_____________________________________________________________________________
+;
+SEGDECODE:
+;
+	; POS	$00  $01  $02  $03  $04  $05  $06  $07
+	; GLYPH '0'  '1'  '2'  '3'  '4'  '5'  '6'  '7'
+	.DB	$3F, $06, $5B, $4F, $66, $6D, $7D, $07
+;
+	; POS	$08  $09  $0A  $0B  $0C  $0D  $0E  $0F
+	; GLYPH	'8'  '9'  'A'  'B'  'C'  'D'  'E'  'F'
+	.DB	$7F, $67, $77, $7C, $39, $5E, $79, $71
+;
+	; POS	$10  $11  $12  $13  $14  $15  $16  $17  $18  $19  $1A
+	; GLYPH	' '  '-'  '.'  'P'  'o'  'r'  't'  'A'  'd'  'r'  'G'
+	.DB	$00, $40, $00, $73, $5C, $50, $78, $77, $5E, $50, $3D
+;
+
+DSKY_HIGHLIGHTFWDKEYS:
+	CALL 	DSKY_PUTLED
+	.DB 	$00,$00,$00,$30,$00,$00,$00,$00
+	RET
+
+DSKY_HIGHLIGHTCMDKEYS:
+
+	CALL 	DSKY_PUTLED
+	.DB 	$20,$00,$20,$3F,$00,$00,$00,$00
+	RET
+
+DSKY_HIGHLIGHTNUMKEYS:
+	CALL 	DSKY_PUTLED
+	.DB 	$1F,$3F,$1F,$30,$00,$00,$00,$00
+	RET
+
+DSKY_HIGHLIGHTKEYSOFF:
+
+	CALL 	DSKY_PUTLED
+	.DB 	$00,$00,$00,$00,$00,$00,$00,$00
+	RET
+#ENDIF
 ;
 DISPLAYBUF:	.FILL	8,0
 ;
@@ -1415,13 +1567,5 @@ MON_STACK	.EQU	$
 		.ECHO	"DBGMON space remaining: "
 		.ECHO	SLACK
 		.ECHO	" bytes.\n"
-;
-; DBGMON CURRENTLY OCCUPIES $F000 TO START OF HBX PROXY BECAUSE THE
-; HBIOS PROXY OCCUPIES THE TOP OF COMMON RAM.  HOWEVER THE DBGMON
-; IMAGE MUST OCCUPY A FULL $1000 BYTES IN THE ROM.
-; BELOW WE JUST PAD OUT THE IMAGE SO IT
-; OCCUPIES THE FULL $1000 BYTES IN ROM.
-;
-		.FILL	HBX_SIZ			; PAD FOR HBX SIZE
 ;
 		.END

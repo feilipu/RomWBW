@@ -22,7 +22,8 @@ jobs:
         run: |
           export TZ='America/Los_Angeles'
           sudo apt-get install libncurses-dev
-          make
+          sudo apt-get install srecord
+          make dist
           make clean
           rm -rf .git*
 
@@ -33,10 +34,24 @@ jobs:
           find -type f -exec md5sum '{}' \;
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: RomWBW_Linux-${{env.GITHUB_REF_SLUG}}-${{env.GITHUB_SHA_SHORT}}
           path: .
+
+      - name: Create Package Archive
+        run: |
+            zip -r RomWBW-SnapShot-Package.zip .
+ 
+      - name: Post SnapShot
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "SnapShot"
+          prerelease: true
+          title: "RomWBW Development SnapShot Build"
+          files: |
+            RomWBW-SnapShot-Package.zip
 
   buildMacOS:
     runs-on: macos-latest
@@ -47,7 +62,8 @@ jobs:
       - name: Build
         run: |
           export TZ='America/Los_Angeles'
-          make
+          brew install srecord
+          make dist
           make clean
           rm -rf .git*
 
@@ -58,7 +74,7 @@ jobs:
           find . -type f -exec md5 -r -- '{}' +;
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: RomWBW_MacOS
           path: .
