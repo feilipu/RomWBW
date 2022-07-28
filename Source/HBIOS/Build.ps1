@@ -1,4 +1,4 @@
-param([string]$Platform = "", [string]$Config = "", [int]$RomSize = 512, [string]$ROMName = "")
+param([string]$Platform = "", [string]$Config = "", [string]$ROMName = "")
 
 # If a PowerShell exception occurs, just stop the script immediately.
 $ErrorAction = 'Stop'
@@ -27,8 +27,8 @@ $ErrorAction = 'Stop'
 # UNA BIOS is simply imbedded, it is not built here.
 #
 
-$PlatformListZ80 = "SBC", "MBC", "ZETA", "ZETA2", "RCZ80", "RCZ280", "EZZ80", "UNA"
-$PlatformListZ180 = "N8", "MK4", "RCZ180", "SCZ180", "DYNO"
+$PlatformListZ80 = "SBC", "MBC", "ZETA", "ZETA2", "RCZ80", "EZZ80", "UNA"
+$PlatformListZ180 = "N8", "MK4", "RCZ180", "SCZ180", "DYNO", "RPH"
 $PlatformListZ280 = "RCZ280"
 
 #
@@ -68,19 +68,6 @@ while ($true)
 }
 
 #
-# Establish the ROM size (in KB).  It may have been passed in on the command line.  Validate
-# $RomSize and loop requesting a new value as long as it is not valid.  The valid ROM sizes
-# are just hard-coded for now.  The ROM size does nothing more than determine the size of the
-# ROM disk portion of the ROM image.
-#
-
-while ($true)
-{
-	if (($RomSize -eq 128) -or ($RomSize -eq 256) -or ($RomSize -eq 512) -or ($RomSize -eq 1024)) {break}
-	$RomSize = (Read-Host -prompt "ROM Size [128|256|512|1024]").Trim()
-}
-
-#
 # TASM should be invoked with the proper CPU type.  Below, the CPU type is inferred
 # from the platform.
 #
@@ -103,7 +90,7 @@ while ($ROMName -eq "")
 }
 
 # Current date/time is queried here to be subsequently imbedded in image
-$TimeStamp = '"' + (Get-Date -Format 'yyyy-MM-dd') + '"'
+$TimeStamp = (Get-Date -Format 'yyyy-MM-dd')
 
 #
 # Since TASM has no mechanism to include files dynamically based on variables, a file
@@ -115,9 +102,8 @@ $TimeStamp = '"' + (Get-Date -Format 'yyyy-MM-dd') + '"'
 @"
 ; RomWBW Configured for ${Platform} ${Config}, $(Get-Date -Format "s")
 ;
-#DEFINE		TIMESTAMP	${TimeStamp}
-;
-ROMSIZE		.EQU		${ROMSize}
+#DEFINE		TIMESTAMP	"${TimeStamp}"
+#DEFINE		CONFIG		"${Platform}_${Config}"
 ;
 #INCLUDE "${ConfigFile}"
 ;
@@ -134,6 +120,5 @@ ROMSIZE		.EQU		${ROMSize}
 set Platform=${Platform}
 set Config=${Config}
 set ROMName=${ROMName}
-set ROMSize=${ROMSize}
 set CPUType=${CPUType}
 "@ | Out-File "build_env.cmd" -Encoding ASCII

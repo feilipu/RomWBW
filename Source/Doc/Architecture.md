@@ -1,76 +1,5 @@
-!include(Common.inc)
-!def(document)(Architecture)
----
-title: |
-   | !product
-   |
-   | !document
-author: !author (mailto:!authmail)
-date: !date
-institution: !orgname
-documentclass: book
-classoption:
-- oneside
-toc: true
-toc-depth: 1
-numbersections: true
-secnumdepth: 1
-papersize: letter
-geometry:
-- top=1.5in
-- bottom=1.5in
-- left=1.5in
-- right=1.5in
-# - showframe
-# - pass
-linestretch: 1.25
-colorlinks: true
-fontfamily: helvet
-fontsize: 12pt
-header-includes:
-- \setlength{\headheight}{15pt}
-- |
-  ```{=latex}
-  \usepackage{fancyhdr}
-  \usepackage{xcolor}
-  \usepackage{xhfill}
-  \renewcommand*{\familydefault}{\sfdefault}
-  \renewcommand{\maketitle}{
-    \begin{titlepage}
-      \centering
-      \par
-      \vspace*{0pt}
-      \includegraphics[width=\paperwidth]{Graphics/Logo.pdf} \par
-      \vfill
-      \raggedleft
-      {\scshape \bfseries \fontsize{48pt}{56pt} \selectfont !product \par}
-      {\bfseries \fontsize{32pt}{36pt} \selectfont !document \par}
-      \vspace{24pt}
-      {\huge Version !ver \\ !date \par}
-      \vspace{24pt}
-      {\large \itshape !orgname \\ \href{http://!orgurl}{!orgurl} \par}
-      \vspace{12pt}
-      {\large \itshape !author \\ \href{mailto:authmail}{!authmail} \par}
-    \end{titlepage}
-  }
-  \pagestyle{empty}
-  ```
-include-before:
-- \renewcommand{\chaptername}{Section}
-- |
-  ```{=latex}
-  \pagestyle{fancyplain}
-  \fancyhf{}
-  \lfoot{\small RetroBrew Computing Group ~~ {\xrfill[3pt]{1pt}[cyan]} ~~ \thepage}
-  \pagenumbering{roman}
-  ```
----
-
-```{=latex}
-\clearpage
-\pagenumbering{arabic}
-\lhead{\fancyplain{}{\nouppercase{\footnotesize \bfseries \leftmark \hfill !product  !document}}}
-```
+$define{doc_title}{Architecture}$
+$include{"Common.h"}$
 
 Overview
 ========
@@ -194,7 +123,7 @@ simpler and more memory efficient to keep everything in RAM. At startup
 Runtime Memory Layout
 =====================
 
-![Banked Switched Memory Layout](Graphics/Bank Switched Memory){ width=80% }
+![Bank Switched Memory Layout](Graphics/BankSwitchedMemory){ width=100% }
 
 System Boot Process
 ===================
@@ -205,7 +134,7 @@ the same area that is bank switched.
 
 Boot Phase 1 copies the phase 2 code to upper memory and jumps to it to
 continue the boot process. This is required because the CPU starts at
-address \$0000 in low memory. However, low memory is used as the area
+address $0000 in low memory. However, low memory is used as the area
 for switching ROM/RAM banks in and out. Therefore, it is necessary to
 relocate execution to high memory in order to initialize the RAM memory
 banks.
@@ -255,7 +184,7 @@ ROM Boot
 At power on (or hardware reset), ROM page 0 is automatically mapped to
 lower memory by hardware level system initialization. Page Zero (first
 256 bytes of the CPU address space) is reserved to contain dispatching
-instructions for interrupt instructions. Address \$0000 performs a jump
+instructions for interrupt instructions. Address $0000 performs a jump
 to the start of the phase 1 code so that this first page can be
 reserved.
 
@@ -281,18 +210,30 @@ initiate an Application Boot using the system image contained in the
 application file itself.
 
 Upon execution, the Application Boot program is loaded into memory by
-the previously running operating system starting at \$0100. Note that
+the previously running operating system starting at $0100. Note that
 program image contains a copy of the HBIOS to be installed and run. Once
 the Application Boot program is loaded by the previous operating system,
 control is passed to it and it performs a system initialization similar
 to the ROM Boot, but using the image loaded in RAM.
 
-Specifically, the code at \$0100 (in low memory) copies phase 2 boot
+Specifically, the code at $0100 (in low memory) copies phase 2 boot
 code to upper memory and transfers control to it. The phase 2 boot code
 copies the HBIOS image from application RAM to RAM, then calls the HBIOS
 initialization routine. At this point, the prior HBIOS code has been
 discarded and overwritten. Finally, the Boot Loader is invoked just like
 a ROM Boot.
+
+ROM-less Boot
+-------------
+
+Some hardware supported by RomWBW has a special mechanism for loading
+the initial code.  These systems have no ROM chips.  However, they
+have a small hardware bootstrap that loads a chunk of code from a
+disk device directlly into RAM at system startup.
+
+The startup then proceeds very much like the Application Boot
+process described above.  HBIOS is installed in it's operating bank
+and control is passed to the loader.
 
 Notes
 -----
@@ -344,7 +285,7 @@ functions (such as cursor positioning, scrolling, etc.).
 Figure 7.1 depicts the relationship between these components
 of HBIOS video processing:
 
-![Character / Emulation / Video Services](Graphics/Character Emulation Video Services){ width=100% }
+![Character / Emulation / Video Services](Graphics/CharacterEmulationVideoServices){ width=100% }
 
 Normally, the operating system will simply utilize the CIOXXX functions
 to send and receive character data. The Character I/O Services will
@@ -458,7 +399,7 @@ _Bits_ | _Function_
 2      | Stop Bits (???)
 1-0    | Data Bits (???)
 
-The 5-bit baud rate value (V) is encoded as V = 75 \* 2\^X \* 3\^Y. The
+The 5-bit baud rate value (V) is encoded as V = 75 * 2^X * 3^Y. The
 bits are defined as YXXXX.
 
 ### Function 0x00 -- Character Input (CIOIN)
@@ -597,17 +538,17 @@ types.
 
 **Media ID** | **Value** | **Format**
 ------------ | --------- | ----------
-MID\_NONE    | 0         | No media installed
-MID\_MDROM   | 1         | ROM Drive
-MID\_MDRAM   | 2         | RAM Drive
-MID\_RF      | 3         | RAM Floppy (LBA)
-MID\_HD      | 4         | Hard Disk (LBA)
-MID\_FD720   | 5         | 3.5" 720K Floppy
-MID\_FD144   | 6         | 3.5" 1.44M Floppy
-MID\_FD360   | 7         | 5.25" 360K Floppy
-MID\_FD120   | 8         | 5.25" 1.2M Floppy
-MID\_FD111   | 9         | 8" 1.11M Floppy
-MID\_HDNEW   | 10        | Hard Disk with 1024 Directory entries
+MID_NONE     | 0         | No media installed
+MID_MDROM    | 1         | ROM Drive
+MID_MDRAM    | 2         | RAM Drive
+MID_RF       | 3         | RAM Floppy (LBA)
+MID_HD       | 4         | Hard Disk (LBA)
+MID_FD720    | 5         | 3.5" 720K Floppy
+MID_FD144    | 6         | 3.5" 1.44M Floppy
+MID_FD360    | 7         | 5.25" 360K Floppy
+MID_FD120    | 8         | 5.25" 1.2M Floppy
+MID_FD111    | 9         | 8" 1.11M Floppy
+MID_HDNEW    | 10        | Hard Disk with 1024 Directory entries
 
 ### Function 0x10 -- Disk Status (DIOSTATUS)
 
@@ -1021,22 +962,22 @@ possible 16 values for foreground or background:
 
 **Foreground**     | **Background**     | **Color**
 ------------------ | ------------------ | ----------------
-\_0   \_\_\_\_0000 | 0\_   0000\_\_\_\_ | Black
-\_1   \_\_\_\_0001 | 1\_   0001\_\_\_\_ | Red
-\_2   \_\_\_\_0010 | 2\_   0010\_\_\_\_ | Green
-\_3   \_\_\_\_0011 | 3\_   0011\_\_\_\_ | Brown
-\_4   \_\_\_\_0100 | 4\_   0100\_\_\_\_ | Blue
-\_5   \_\_\_\_0101 | 5\_   0101\_\_\_\_ | Magenta
-\_6   \_\_\_\_0110 | 6\_   0110\_\_\_\_ | Cyan
-\_7   \_\_\_\_0111 | 7\_   0111\_\_\_\_ | White
-\_8   \_\_\_\_1000 | 8\_   1000\_\_\_\_ | Gray
-\_9   \_\_\_\_1001 | 9\_   1001\_\_\_\_ | Light Red
-\_A   \_\_\_\_1010 | A\_   1010\_\_\_\_ | Light Green
-\_B   \_\_\_\_1011 | B\_   1011\_\_\_\_ | Yellow
-\_C   \_\_\_\_1100 | C\_   1100\_\_\_\_ | Light Blue
-\_D   \_\_\_\_1101 | D\_   1101\_\_\_\_ | Light Magenta
-\_E   \_\_\_\_1110 | E\_   1110\_\_\_\_ | Light Cyan
-\_F   \_\_\_\_1111 | F\_   1111\_\_\_\_ | Bright White
+n0   nnnn0000      | 0n   0000nnnn      | Black
+n1   nnnn0001      | 1n   0001nnnn      | Red
+n2   nnnn0010      | 2n   0010nnnn      | Green
+n3   nnnn0011      | 3n   0011nnnn      | Brown
+n4   nnnn0100      | 4n   0100nnnn      | Blue
+n5   nnnn0101      | 5n   0101nnnn      | Magenta
+n6   nnnn0110      | 6n   0110nnnn      | Cyan
+n7   nnnn0111      | 7n   0111nnnn      | White
+n8   nnnn1000      | 8n   1000nnnn      | Gray
+n9   nnnn1001      | 9n   1001nnnn      | Light Red
+nA   nnnn1010      | An   1010nnnn      | Light Green
+nB   nnnn1011      | Bn   1011nnnn      | Yellow
+nC   nnnn1100      | Cn   1100nnnn      | Light Blue
+nD   nnnn1101      | Dn   1101nnnn      | Light Magenta
+nE   nnnn1110      | En   1110nnnn      | Light Cyan
+nF   nnnn1111      | Fn   1111nnnn      | Bright White
 
 Attribute byte values are constructed using the following bit encoding:
 
@@ -1158,12 +1099,12 @@ The currently defined video device types are:
 
 VDA ID     | Value | Device
 ---------- | ----- | ------
-VDA\_NONE  | 0x00  | No VDA
-VDA\_VDU   | 0x10  | ECB VDU board
-VDA\_CVDU  | 0x20  | ECB Color VDU board
-VDA\_7220  | 0x30  | ECB uPD7220 video display board
-VDA\_N8    | 0x40  | TMS9918 video display built-in to N8
-VDA\_VGA   | 0x50  | ECB VGA board
+VDA_NONE   | 0x00  | No VDA
+VDA_VDU    | 0x10  | ECB VDU board
+VDA_CVDU   | 0x20  | ECB Color VDU board
+VDA_7220   | 0x30  | ECB uPD7220 video display board
+VDA_N8     | 0x40  | TMS9918 video display built-in to N8
+VDA_VGA    | 0x50  | ECB VGA board
 
 ### Function 0x44 -- Video Set Cursor Style (VDASCS)
 
@@ -1178,7 +1119,7 @@ VDA\_VGA   | 0x50  | ECB VGA board
 
 If supported by the video hardware, adjust the format of the cursor such
 that the cursor starts at the pixel specified in the top nibble of D and
-end at the pixel specified in the bottom nibble of D. So, if D=\$08, a
+end at the pixel specified in the bottom nibble of D. So, if D=$08, a
 block cursor would be used that starts at the top pixel of the character
 cell and ends at the ninth pixel of the character cell.
 
@@ -1368,6 +1309,25 @@ codes as described at the start of this section.
 
 `\clearpage`{=latex}
 
+### Function 0x4F -- Read a character at current video position (VDARDC)
+
+| _Entry Parameters_
+|       B: 0x4F
+|       C: Video Device Unit ID
+
+| _Exit Results_
+|       A: Status (0=OK, else error)
+|       E: Character
+|       B: Character Color Code
+|       C: Character Attribute Code
+
+Read a character from the current cursor position including it's colour
+and attributes. If the display does not support colours or attributes
+then return colour white on black and no attributes. If the device does
+not support the ability to read a character, return error status
+
+`\clearpage`{=latex}
+
 Sound (SND)
 ------------
 
@@ -1439,7 +1399,7 @@ If the driver is able to generate the requested note, a success (0) is
 returned, otherwise a non-zero error state will be returned.
 
 The sound chip resolution and its oscillator limit the range and
-accuracy of the notes played. The typically range of the AY-3-8910
+accuracy of the notes played. The typical range of the AY-3-8910
 is six octaves, Bb2/A#2-A7, where each value is a unique tone. Values
 above and below can still be played but each quarter tone step may not
 result in a note change.
@@ -1449,20 +1409,20 @@ to the corresponding octave and note.
 
 | Note  | Oct 0 | Oct 1 | Oct 2 | Oct 3 | Oct 4 | Oct 5 | Oct 6 | Oct 7 |
 |:----- | -----:| -----:| -----:| -----:| -----:| -----:| -----:| -----:|
-| Bb/A# |   0   |   48  |  96   |  144  |  192  |  240  |  288  |  336  |
+| C     |   X   |   8   |   56  |  104  |  152  |  200  |  248  |  296  |
+| C#/Db |   X   |   12  |   60  |  108  |  156  |  204  |  252  |  300  |
+| D     |   X   |   16  |   64  |  112  |  160  |  208  |  256  |  304  |
+| D#/Eb |   X   |   20  |   68  |  116  |  164  |  212  |  260  |  308  |
+| E     |   X   |   24  |   72  |  120  |  168  |  216  |  264  |  312  |
+| F     |   X   |   28  |   76  |  124  |  172  |  220  |  268  |  316  |
+| F#/Gb |   X   |   32  |   80  |  128  |  176  |  224  |  272  |  320  |
+| G     |   X   |   36  |   84  |  132  |  180  |  228  |  276  |  324  |
+| G#/Ab |   X   |   40  |   88  |  136  |  184  |  232  |  280  |  328  |
+| A     |   X   |   44  |   92  |  140  |  188  |  236  |  284  |  332  |
+| A#/Bb |   0   |   48  |   96  |  144  |  192  |  240  |  288  |  336  |
 | B     |   4   |   52  |  100  |  148  |  196  |  244  |  292  |  340  |
-| C     |   8   |   56  |  104  |  152  |  200  |  248  |  296  |  344  |
-| C#/Db |   12  |   60  |  108  |  156  |  204  |  252  |  300  |  348  |
-| D     |   16  |   64  |  112  |  160  |  208  |  256  |  304  |  352  |
-| Eb/D# |   20  |   68  |  116  |  164  |  212  |  260  |  308  |  356  |
-| E     |   24  |   72  |  120  |  168  |  216  |  264  |  312  |  360  |
-| F     |   28  |   76  |  124  |  172  |  220  |  268  |  316  |  364  |
-| F#/Gb |   32  |   80  |  128  |  176  |  224  |  272  |  320  |  368  |
-| G     |   36  |   84  |  132  |  180  |  228  |  276  |  324  |  372  |
-| Ab/G# |   40  |   88  |  136  |  184  |  232  |  280  |  328  |  376  |
-| A     |   44  |   92  |  140  |  188  |  236  |  284  |  332  |  380  |
 
-### Function 0x54 -- Sound Play SNDPLAY)
+### Function 0x54 -- Sound Play (SNDPLAY)
 
 | _Entry Parameters_
 |       B: 0x54
@@ -1476,7 +1436,7 @@ This function applies the previously specified volume and period by
 programming the sound chip with the appropriate values.  The values
 are applied to the specified channel of the chip.
 
-For example, to play a specific note on Audio Device UNit 0,
+For example, to play a specific note on Audio Device Unit 0,
 the following HBIOS calls would need to be made:
 
 ```
@@ -1509,7 +1469,7 @@ key aspects of the specific Audio Device.
 |           B: Count of standard tone channels
 |           C: Count of noise tone channels
 
-#### SNDQUERY Subfunction 0x02		 -- Get current volume setting (SNDQ_VOL)
+#### SNDQUERY Subfunction 0x02 -- Get current volume setting (SNDQ_VOL)
 
 |      _Entry Parameters_
 |           B: 0x55
@@ -1619,7 +1579,7 @@ System (SYS)
 |       A: Status (0=OK, else error)
 
 This function performs various forms of a system reset depending on
-the value of the subfucntion.  See subfunctions below.
+the value of the subfunction.  See subfunctions below.
 
 #### SYSRESET Subfunction 0x00 -- Internal HBIOS Reset (RESINT)
 
@@ -1990,6 +1950,7 @@ lookup.
 |           H: Z80 CPU Variant
 |           L: CPU Speed in MHz
 |           DE: CPU Speed in KHz
+|           BC: Oscillator Speed in KHz
 
 #### SYSGET Subfunction 0xF1 -- Get Memory Information (MEMINFO)
 
@@ -2010,6 +1971,23 @@ lookup.
 |           A: Status (0=OK, else error)
 |           D: BIOS Bank ID
 |           E: User Bank ID
+
+#### SYSGET Subfunction 0xF3 -- Get CPU Speed (CPUSPD)
+
+|      _Entry Parameters_
+|           BC: 0xF8F3
+
+|      _Returned Values_
+|           A: Status (0=OK, else error)
+|           L: Clock Mult (0:Half, 1:Full, 2: Double)
+|           D: Memory Wait States
+|           E: I/O Wait States
+
+This function will return the running CPU speed attributes of a system.
+Note that it is frequently impossible to tell if a system is capable
+of dynamic speed changes.  This function returns it's best guess.
+If either of the wait state settings is unknown, the function will
+return 0xFF.
 
 ### Function 0xF9 -- System Set (SYSSET)
 
@@ -2053,6 +2031,34 @@ available along with the registers/information used as input.
 
 |      _Returned Values_
 |           A: Status (0=OK, else error)
+
+#### SYSSET Subfunction 0xF3 -- Set CPU Speed (CPUSPD)
+
+|      _Entry Parameters_
+|           BC: 0xF9F3
+|           L: Clock Mult (0:Half, 1:Full, 2: Double)
+|           D: Memory Wait States
+|           E: I/O Wait States
+
+|      _Returned Values_
+|           A: Status (0=OK, else error)
+
+This function will modify the running CPU speed attributes of a system.
+Note that it is frequently impossible to tell if a system is capable
+of dynamic speed changes.  This function makes the changes blindly.
+You can specify 0xFF for either of the wait state settings to have them
+left alone.  If an attempt is made to change the speed of a system
+that is definitely incapable of doing so, then an error result is
+returned.
+
+Some peripherals are dependant on the CPU speed.  For example, the Z180
+ASCI baud rate and system timer are derived from the CPU speed.  The
+Set CPU Speed function will attempt to adjust these peripherals for
+correct operation after modifying the CPU speed.  However, in some
+cases this may not be possible.  The baud rate of ASCI ports have a
+limited set of divisors.  If there is no satisfactory divisor to
+retain the existing baud rate under the new CPU speed, then the baud
+rate of the ASCI port(s) will be affected.
 
 ### Function 0xFA -- System Peek (SYSPEEK)
 
@@ -2202,23 +2208,24 @@ The following section outlines the read only data referenced by the
 
 #### TMS9918 Driver:
 
-| Name   | Offset | Size (bytes)| Description |
-|--------|--------|-------------|-------------|
-| PPIA	 | 0      | 1	          | PPI PORT A  |
-| PPIB	 | 1      | 1           | PPI PORT B  |
-| PPIC	 | 2      | 1           | PPI PORT C  |
-| PPIX	 | 3      | 1           | PPI CONTROL PORT |
-| DATREG | 4      | 1           | IO PORT ADDRESS FOR MODE 0 |
-| CMDREG | 5      | 1           | IO PORT ADDRESS FOR MODE 1 |
-| The following are the register mirror values that HBIOS used for initialisation |
-|	REG. 0 | 6      | 1           | $00	       - NO EXTERNAL VID
-| REG. 1 | 7      | 1           |	$50 or $70 - SET MODE 1 and interrupt if enabled |
-| REG. 2 | 8      | 1           |	$00	       - PATTERN NAME TABLE := 0
-| REG. 3 | 9      | 1           |	$00	       - NO COLOR TABLE
-| REG. 4 | 10     | 1           |	$01	       - SET PATTERN GENERATOR TABLE TO $800
-| REG. 5 | 11     | 1           |	$00	       - SPRITE ATTRIBUTE IRRELEVANT
-| REG. 6 | 12     | 1           |	$00	       - NO SPRITE GENERATOR TABLE
-| REG. 7 | 13     | 1           |	$F0	       - WHITE ON BLACK
-| DCNTL* | 14     | 1           | Z180 DMA/WAIT CONTROL |
+| **Name**  | **Offset** | **Bytes** | **Description** |
+|--------|----|----|-----------------------|
+| PPIA	 | 0  | 1  | PPI PORT A  |
+| PPIB	 | 1  | 1  | PPI PORT B  |
+| PPIC	 | 2  | 1  | PPI PORT C  |
+| PPIX	 | 3  | 1  | PPI CONTROL PORT |
+| DATREG | 4  | 1  | IO PORT ADDRESS FOR MODE 0 |
+| CMDREG | 5  | 1  | IO PORT ADDRESS FOR MODE 1 |
+|        |    |    | _Below are the register mirror values_ |
+|        |    |    | _that HBIOS used for initialisation_ |
+| REG. 0 | 6  | 1  | $00 - NO EXTERNAL VID
+| REG. 1 | 7  | 1  | $50 or $70 - SET MODE 1 and interrupt if enabled |
+| REG. 2 | 8  | 1  | $00 - PATTERN NAME TABLE := 0 |
+| REG. 3 | 9  | 1  | $00 - NO COLOR TABLE |
+| REG. 4 | 10 | 1  | $01 - SET PATTERN GENERATOR TABLE TO $800 |
+| REG. 5 | 11 | 1  | $00 - SPRITE ATTRIBUTE IRRELEVANT |
+| REG. 6 | 12 | 1  | $00 - NO SPRITE GENERATOR TABLE |
+| REG. 7 | 13 | 1  | $F0 - WHITE ON BLACK |
+| DCNTL* | 14 | 1  | Z180 DMA/WAIT CONTROL |
 
 * ONLY PRESENT FOR Z180 BUILDS

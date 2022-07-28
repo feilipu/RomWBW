@@ -1,10 +1,10 @@
 #
 # this makefile subsumes all the work done in Build.cmd, BuildDisk.cmd, BuildDisk.ps1
 #
-SYSTEMS = ../CPM22/cpm_wbw.sys ../ZSDOS/zsys_wbw.sys ../CPM3/cpmldr.sys
+SYSTEMS = ../CPM22/cpm_wbw.sys ../ZSDOS/zsys_wbw.sys ../CPM3/cpmldr.sys ../ZPM3/zpmldr.sys
 
 FDIMGS = fd144_cpm22.img fd144_zsdos.img fd144_nzcom.img \
-	fd144_cpm3.img fd144_zpm3.img fd144_ws4.img
+	fd144_cpm3.img fd144_zpm3.img fd144_ws4.img fd144_qpm.img
 HD512IMGS = hd512_cpm22.img hd512_zsdos.img hd512_nzcom.img \
 	hd512_cpm3.img hd512_zpm3.img hd512_ws4.img
 # HDIMGS += hd512_bp.img
@@ -16,8 +16,8 @@ HD512PREFIX =
 HD1024PREFIX = hd1024_prefix.dat
 
 OBJECTS = $(FDIMGS)
-OBJECTS += $(HD512IMGS) hd512_combo.img $(HD512PREFIX)
-OBJECTS += $(HD1024IMGS) hd1024_combo.img $(HD1024PREFIX)
+OBJECTS += $(HD512IMGS) hd512_combo.img  hd512_dos65.img hd512_qpm.img$(HD512PREFIX)
+OBJECTS += $(HD1024IMGS) hd1024_combo.img hd1024_qpm.img $(HD1024PREFIX)
 
 OTHERS = blank144 blankhd512 blankhd1024
 
@@ -43,7 +43,7 @@ hd1024_combo.img: $(HD1024PREFIX) $(HD1024IMGS)
 # at build time, a few variables are set (sys, fmt, type, size, d) based on the
 # target to build.  first, we build an empty image using the a tr, dd pipeline.
 # we then scan the d_{d}/u* directories, copying in files to user numbers
-# then process the d_{d}.txt file, copying in those files, and finally maybe put
+# then process the ?d_{d}.txt file, copying in those files, and finally maybe put
 # an OS at the start of each image
 #
 
@@ -71,17 +71,19 @@ blankhd1024:
 	@sys= ; \
 	case $@ in \
 		(*cpm22*) sys=../CPM22/cpm_wbw.sys;; \
-		(*zsdos* | *nzcom*) sys=../ZSDOS/zsys_wbw.sys;; \
-		(*cpm3* | *zpm3*) sys=../CPM3/cpmldr.sys;; \
+		(*qpm*) sys=d_qpm/u0/qpm.sys;; \
+		(*zsdos* | *nzcom* | *dos65*) sys=../ZSDOS/zsys_wbw.sys;; \
+		(*cpm3*) sys=../CPM3/cpmldr.sys;; \
+		(*zpm3*) sys=../ZPM3/zpmldr.sys;; \
 	esac ; \
 	if echo $@ | grep -q ^fd144_ ; then \
-		fmt=wbw_fd144 ; type=fd144_ ; proto=blank144 ; \
+		fmt=wbw_fd144 ; dtype=fd ; type=fd144_ ; proto=blank144 ; \
 	fi ; \
 	if echo $@ | grep -q ^hd512_ ; then \
-		fmt=wbw_hd512 ; type=hd512_ ; proto=blankhd512 ; \
+		fmt=wbw_hd512 ; dtype=hd ; type=hd512_ ; proto=blankhd512 ; \
 	fi ; \
 	if echo $@ | grep -q ^hd1024_ ; then \
-		fmt=wbw_hd1024 ; type=hd1024_ ; proto=blankhd1024 ; \
+		fmt=wbw_hd1024 ; dtype=hd ; type=hd1024_ ; proto=blankhd1024 ; \
 	fi ; \
 	d=$$(echo $(basename $@) | sed s/$$type//) ; \
 	echo Generating $@ ; \
@@ -101,9 +103,10 @@ blankhd1024:
 			done ; \
 		fi ; \
 	done ; \
-	if [ -f d_$$d.txt ] ; then \
-		echo " " copying files from d_$$d.txt ; \
-		grep -v ^# d_$$d.txt | tr -d '\r' | while read file user ; do \
+	echo $${dtype}_$$d.txt ; \
+	if [ -f $${dtype}_$$d.txt ] ; then \
+		echo " " copying files from $${dtype}_$$d.txt ; \
+		grep -v ^# $${dtype}_$$d.txt | tr -d '\r' | while read file user ; do \
 			rf=$$($(CASEFN) $$file | sort -V) ; \
 			echo "    " $$rf ; \
 			if [ -z "$$rf" ] ; then \

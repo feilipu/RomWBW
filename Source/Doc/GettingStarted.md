@@ -1,46 +1,14 @@
-!include(Common.inc)
-!def(document)(Getting Started)
----
-title: |
-   | !product
-   |
-   | !document
-author: !author (mailto:!authmail)
-date: !date
-institution: !orgname
-documentclass: article
-classoption:
- - oneside
-toc: true
-papersize: letter
-geometry:
- - top=1.5in
- - bottom=1.5in
- - left=1.5in
- - right=1.5in
-# - showframe
-linestretch: 1.25
-colorlinks: true
-fontfamily: helvet
-fontsize: 12pt
-header-includes:
- - |
-   ```{=latex}
-   \renewcommand*{\familydefault}{\sfdefault}
-   \setstretch{1.25} % for TOC
-   ```
----
-
-`\clearpage  % new page after TOC`{=latex}
+$define{doc_title}{Getting Started}$
+$include{"Common.h"}$
 
 # RomWBW
 
 ## Z80/Z180 System Software
 
-| Version !ver
-| !date
+| Version $doc_ver$
+| $doc_date$
 
-!author() [!authmail](mailto:!authmail)
+$doc_author$ [$doc_authmail$](mailto:$doc_authmail$)
 
 ### Download
 
@@ -195,7 +163,8 @@ containing some common applications. This provides a simple
 environment for learning to use your system. Be aware that files saved
 to the RAM disk (A:) will disappear at the next power on (RAM is
 generally not persistent). Also note that attempts to save files to
-the ROM disk (B:) will fail because ROM is not writable.
+the ROM disk (B:) will fail because ROM is not writable under normal
+circumstances.
 
 # General Usage
 
@@ -295,6 +264,38 @@ If your system has an RTC/NVRAM device, it will not be listed in the
 unit summary table. Since only a single RTC/NVRAM device can exist in
 one system, unit numbers are not required nor used for this type of
 device.
+
+## Changing Console and Console speed
+
+Your system can support a number of devices for the console. They may
+be VDU type devices or serial devices. If you want to change which
+device is the console, the ***I*** menu option can be used to choose
+the unit and it's speed.
+
+The command format is ```I <u> [<c>]``` 
+
+where ***u*** is unit to select and ***c*** is the optional baud rate code as listed below.
+
+```
+ Code |   Rate   | Code |   Rate   | Code |   Rate   | Code |   Rate   |
+------|----------|------|----------|------|----------|------|----------|
+   0  |      75  |   8  |    1800  |  16  |   28880  |  24  |  460800  |
+   1  |     150  |   9  |    2400  |  17  |   38400  |  25  |  614400  |
+   2  |     225  |  10  |    3600  |  18  |   57600  |  26  |  921600  |
+   3  |     300  |  11  |    4800  |  19  |   76800  |  27  | 1228822  |
+   4  |     450  |  12  |    7200  |  20  |  115200  |  28  | 1843200  |
+   5  |     600  |  13  |    9600  |  21  |  153600  |  29  | 2457600  |
+   6  |     900  |  14  |   14400  |  22  |  230400  |  30  | 3686400  |
+   7  |    1200  |  15  |   19200  |  23  |  307200  |  31  | 7372800  |
+------------------------------------------------------------------------
+```
+
+Example: To change current console to 9600 baud
+
+```
+I 0 13
+```
+
 
 ## Drive Letter Assignment
 
@@ -423,7 +424,7 @@ therefore, globally available.
 | TALK        | Direct console I/O to a specified character device.                                                  |
 | RTC         | Manage and test the Real Time Clock hardware.                                                        |
 | TIMER       | Display value of running periodic system timer.                                                      |
-| INTTEST     | Test interrupt vector hooking.                                                                       |
+| CPUSPD      | Change the running CPU speed and wait states of the system.    |
 
 Some custom applications do not fit on the ROM disk. They are found on the
 disk image files or the individual files can be found in the Binary\\Apps
@@ -433,6 +434,7 @@ directory of the distribution.
 | ----------- | -------------------------------------------------------------- |
 | TUNE        | Play .PT2, .PT3, .MYM audio files.                             |
 | FAT         | Access MS-DOS FAT filesystems from RomWBW (based on FatFs).    |
+| INTTEST     | Test interrupt vector hooking.                                                                       |
 
 Additional documentation on all of these applications can be found in
 "RomWBW Applications.pdf" in the Doc directory of the distribution.
@@ -643,9 +645,9 @@ Cards, as well as real spinning hard disks.
 | fd_cpm22.img    | hd_cpm22.img    | DRI CP/M 2.2 boot disk                 |
 | fd_zsdos.img    | hd_zsdos.img    | ZSDOS 1.1 boot disk                    |
 | fd_nzcom.img    | hd_nzcom.img    | NZCOM boot disk                        |
-| fd_cpm3         | hd_cpm3.img     | DRI CP/M 3 boot disk                   |
-| fd_zpm3         | hd_zpm3.img     | ZPM3 boot disk                         |
-| fd_ws4          | hd_ws4.img      | WordStar v4 application disk           |
+| fd_cpm3.img     | hd_cpm3.img     | DRI CP/M 3 boot disk                   |
+| fd_zpm3.img     | hd_zpm3.img     | ZPM3 boot disk                         |
+| fd_ws4.img      | hd_ws4.img      | WordStar v4 application disk           |
 
 In addition to the disk images above, there is also a special hard
 disk image called hd_combo.img. This image contains all of the images
@@ -849,12 +851,14 @@ ZPM3 is an interesting combination of the features of both CP/M 3 and
 ZCPR 3. Essentially, it has the features of and compatibility with
 both.
 
-Like CP/M 3, to make ZPM3 boot disk, you put CPMLDR.SYS on the system
+Like CP/M 3, to make ZPM3 boot disk, you put ZPMLDR.SYS on the system
 tracks of the disk.
 
 ### Notes
 
-- `ZPMLDR` is included with ZPM3, but it is not working correctly.
+- `ZPMLDR` is equivalent to CPMLDR.  Both are included.  Previously,
+ZPMLDR had issues that prevented it from properly booting RomWBW ZPM3.
+However, those issues have been resolved.
 
 - The ZPM operating system is contained in the file called CPM3.SYS
 which is confusing, but this is as intended by the ZPM3 distribution.
@@ -1080,6 +1084,8 @@ through the normal startup process just like it was started from ROM.
 However, your ROM has not been updated and the next time you boot your
 system, it will revert to the system image contained in ROM.
 
+## Upgrading via Flash Utility
+
 If you do not have easy access to a ROM programmer, it is usually
 possible to reprogram your system ROM using the FLASH utility from
 Will Sowerbutts. This application, called FLASH.COM, can be found on the
@@ -1122,6 +1128,23 @@ To confirm your ROM chip has been successfully updated, restart your
 system and boot an operating system from ROM. Do not boot from a disk
 device yet. Review the boot messages to see if any issues have
 occurred.
+
+## Upgrading via XModem Flash Updater
+
+Similar to using the Flash utility, the system ROM can be updated
+or upgraded through the ROM based updater utility. This works by
+by reprogrammed the flash ROM as the file is being transfered.
+
+This has the advantage that secondary storage is not required to
+hold the new image.
+
+From the Boot Loader menu select X (Xmodem Flash Updater) and then
+U (Begin Update). Then initiate the Xmodem transfer of the .img or
+.upd file.
+
+More information can be found in the ROM Applications document.
+
+## Post Upgrade System Image and Application Update Process
 
 Once you are satisfied that the ROM is working well, you will need to
 update the system images and RomWBW custom applications on your disk
@@ -1192,23 +1215,22 @@ operating system on your disk.
   
   After this is done, you will need to use `SYSCOPY` to place
   the ZPM3 loader image on the boot tracks of all ZPM3
-  boot disks/slices.  The loader image is called `CPMLDR.SYS`.
+  boot disks/slices.  The loader image is called `ZPMLDR.SYS`.
   You must then copy (at a minimum) `CPM3.SYS`, `ZCCP.COM`,
   `ZINSTAL.ZPM`, and `STARTZPM.COM` onto the disk/slice.
   Assuming you copied the ZPM3 boot files onto your RAM disk
   at A:, you would use:
   
   ```
-  A>B:SYSCOPY C:=CPMLDR.SYS
+  A>B:SYSCOPY C:=ZPMLDR.SYS
   A>B:COPY CPM3.SYS C:
   A>B:COPY ZCCP.COM C:
   A>B:COPY ZINSTAL.ZPM C:
   A>B:COPY STARTZPM.COM C:
   ```
   
-  You may be wondering if the references to `CPMLDR.SYS` and
-  `CPM3.SYS` are typos.  They are not.  ZPM3 uses the same loader
-  image as CPM3.  The ZPM3 main system code file is called `CPM3.SYS`
+  You may be wondering if the reference to `CPM3.SYS` is a typo.
+  It is not.  The ZPM3 main system code file is called `CPM3.SYS`
   which is the same name as CP/M 3 uses, but the file contents are
   not the same.
 
@@ -1241,29 +1263,34 @@ images.
 * FAT.COM
 * TUNE.COM
 
-# System Update
+## System Update
 
-If the system running ROMWBW utilizes the SST39SF040 Flash chip then it is possible to do a System Update in place of
-a System Upgrade in some cases.
+If the system running ROMWBW utilizes the SST39SF040 Flash chip then it
+is possible to do a System Update in place of a System Upgrade in some
+cases.
 
-A System Update would involve only updating the BIOS, ROM applications and CP/M system.
+A System Update would involve only updating the BIOS, ROM applications
+and CP/M system.
 
-A System Update may be more favorable than a System Upgrade in cases such as:
+A System Update may be more favorable than a System Upgrade in cases
+such as:
 
  - Overwriting of the ROM drive is not desired.
  - Space is unavailable to hold a full ROMWBW ROM.
  - To mimimize time taken to transfer and flash a full ROM.
  - Configuration changes are only minor and do not impact disk applications.
 
-The ROMWBW build process generates a system upgrade file along with the normal ROM image and can be identified by the
-extension ".upd". It will be 128Kb in size. In comparison the normal ROM image will have the extension ".rom" and be
-512Kb or 1024Kb in size.
+The ROMWBW build process generates a system upgrade file along with 
+the normal ROM image and can be identified by the extension ".upd". It 
+will be 128Kb in size. In comparison the normal ROM image will have 
+the extension ".rom" and be 512Kb or 1024Kb in size.
 
-Transferring and flashing the System Update is accomplished in the same manner as described above in *Upgrading* with
-the required difference being that the flash application needs to be directed to complete a partial flash using the
-/p command line switch.
+Transferring and flashing the System Update is accomplished in the 
+same manner as described above in *Upgrading* with the required 
+difference being that the flash application needs to be directed to 
+complete a partial flash using the /P command line switch.
 
-`E>flash write rom.upd /p`
+`E>FLASH WRITE ROM.UPD /P`
 
 # RomWBW Distribution
 
@@ -1281,7 +1308,7 @@ directories are:
 
 | Application | Description                                                    |
 | ----------- | -------------------------------------------------------------- |
-| Binary      | The final output files of the build process are placed here. Most importantly, are the ROM images with the file names ending in ".rom". |
+| Binary      | The final output files of the build process are placed here. Most importantly, the ROM images with the file names ending in ".rom". |
 | Doc         | Contains various detailed documentation including the operating systems, RomWBW architecture, etc. |
 | Source      | Contains the source code files used to build the software and ROM images. |
 | Tools       | Contains the MS Windows programs that are used by the build process or that may be useful in setting up your system. |
@@ -1305,10 +1332,11 @@ these applications are no longer provided.
 driver.
 * Ed Brindley contributed some of the code that supports the RC2014
 platform.
-* Phil Summers contributed Forth and BASIC in ROM, the AY-3-8910 sound
-driver as well as a long list of general code enhancements.
+* Phil Summers contributed the Forth and BASIC adaptations in ROM, the
+AY-3-8910 sound driver as well as a long list of general code
+enhancements.
 * Phillip Stevens contributed support for FreeRTOS.
-* Curt Mayer contributed the Linux / MacOS build process.
+* Curt Mayer contributed the original Linux / MacOS build process.
 * UNA BIOS and FDISK80 are the products of John Coffman.
 * FLASH4 is a product of Will Sowerbutts.
 * CLRDIR is a product of Max Scane.
@@ -1318,6 +1346,50 @@ the SN76489 sound driver.
 * The RomWBW Disk Catalog document was produced by Mykl Orders.
 
 Contributions of all kinds to RomWBW are very welcome.
+
+# Licensing
+
+RomWBW is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+RomWBW is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with RomWBW.  If not, see <https://www.gnu.org/licenses/>.
+
+Portions of RomWBW were created by, contributed by, or derived from
+the work of others.  It is believed that these works are being used
+in accordance with the intentions and/or licensing of their creators.
+
+If anyone feels their work is being used outside of it's intended
+licensing, please notify:
+
+> Wayne Warthen  
+> wwarthen@gmail.com
+
+RomWBW is an aggregate work.  It is composed of many individual,
+standalone programs that are distributed as a whole to function as
+a cohesive system.  Each program may have it's own licensing which
+may be different from other programs within the aggregate.
+
+In some cases, a single program (e.g., CP/M Operating System) is
+composed of multiple components with different licenses.  It is
+believed that in all such cases the licenses are compatible with
+GPL version 3.
+
+RomWBW encourages code contributions from others.  Contributors
+may assert their own copyright in their contributions by
+annotating the contributed source code appropriately.  Contributors
+are further encouraged to submit their contributions via the RomWBW
+source code control system to ensure their contributions are clearly
+documented.
+
+All contributions to RomWBW are subject to this license.
 
 # Getting Assistance
 
@@ -1331,4 +1403,4 @@ RetroBrew Computers projects is via the community forums:
 Submission of issues and bugs are welcome at the
 [RomWBW GitHub Repository](https://github.com/wwarthen/RomWBW).
 
-Also feel free to email !author at [!authmail](mailto:!authmail).
+Also feel free to email $doc_author$ at [$doc_authmail$](mailto:$doc_authmail$).

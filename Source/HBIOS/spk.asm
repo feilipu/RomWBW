@@ -160,14 +160,7 @@ SP_QUERY_DEV:
 ;======================================================================
 ;
 SP_SETTBL:
-	LD	HL,(CB_CPUKHZ)		; GET CPU SPEED.
-	LD	DE,1000			; CONVERT TO MHZ
-	CALL	DIV16
-;
-	LD	DE,900			; IF MHZ IS WITHIN 10% OF
-	SBC	HL,DE			; NEXT INTEGER INCREMENT
-	JP	M,SP_SETTBL3		; THEN BUMP UP. I.E. 9.928MHZ
-	INC	C			; BECOMES 10MHZ
+	LD	BC,(CB_CPUMHZ)		; GET MHZ CPU SPEED (IN C).
 ;	 
 SP_SETTBL3:
 	LD	B,SP_NOTCNT		; SET NUMBER OF NOTES TO
@@ -265,7 +258,7 @@ SP_BEEPER:
 	LD	B,$00
 	LD	IX,SPK_DLYADJ 		; The base address of the timing loop.
 	ADD	IX,BC			; Alter the length of the timing loop. Use an earlier starting point for each '1' lost by taking INT (L/4).
-	LD	A,(RTCVAL)		; Fetch the present border colour from BORDCR and move it to bits 2, 1 and 0 of the A register.
+	LD	A,(HB_RTCVAL)		; Fetch the present border colour from BORDCR and move it to bits 2, 1 and 0 of the A register.
 ;
 ;	The HL register holds the 'length of the timing loop' with 16 T states being used for each '1' in the L register and 1024 T states for each '1' in the H register.
 ;

@@ -76,11 +76,15 @@ Tools/unix/zx/zx
 
 !Source/ver.lib
 !Source/Apps/FAT/FAT.COM
+!Source/Apps/ZMP/zmpx.com
+!Source/Apps/ZMD/zmdsubs.rel
+!Source/Apps/Test/vdctest/font.asm
 !Source/BPBIOS/bpbuild.com
 !Source/BPBIOS/movp112.com
+!Source/BPBIOS/*.lib
 !Source/BPBIOS/Z34RCP11/cledinst.com
 !Source/BPBIOS/Z34RCP11/cledsave.com
-!Source/Fonts
+!Source/Fonts/*
 !Source/Images/**
 !Source/RomDsk/**
 !Source/UBIOS/FSFAT.BIN
@@ -92,7 +96,7 @@ Tools/unix/zx/zx
 !Source/ZRC/*.bin
 !Source/ZZR/*.bin
 !Source/ZZR/*.hex
-!Tools/cpm/bin/*
+!Tools/cpm/**
 !Tools/unix/zx/*
 !Tools/zx/*
 

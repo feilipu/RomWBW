@@ -3,22 +3,22 @@
 ## Z80/Z180 System Software
 
 Version 3.1 Pre-release  
-Thursday 22 July 2021
+09 Jul 2022
 
 Wayne Warthen <wwarthen@gmail.com>
 
 ### Download
 
-  - [RomWBW Distribution
+-   [RomWBW Distribution
     Package](https://github.com/wwarthen/RomWBW/releases)
 
 ### Related Pages
 
-  - [RomWBW Architecture
+-   [RomWBW Architecture
     Document](https://www.retrobrewcomputers.org/lib/exe/fetch.php?media=software:firmwareos:romwbw:romwbw_architecture.pdf)
-  - [RomWBW
+-   [RomWBW
     Applications](https://www.retrobrewcomputers.org/doku.php?id=software:firmwareos:romwbw:apps)
-  - [RomWBW
+-   [RomWBW
     Errata](https://www.retrobrewcomputers.org/doku.php?id=software:firmwareos:romwbw:errata)
 
 # Overview
@@ -27,28 +27,28 @@ RomWBW provides a complete software system for a wide variety of
 hobbyist Z80/Z180 CPU-based systems produced by these developer
 communities:
 
-  - [RetroBrew Computers](https://www.retrobrewcomputers.org)
-  - [RC2014](https://rc2014.co.uk)
-  - [retro-comp](https://groups.google.com/forum/#!forum/retro-comp)
+-   [RetroBrew Computers](https://www.retrobrewcomputers.org)
+-   [RC2014](https://rc2014.co.uk)
+-   [retro-comp](https://groups.google.com/forum/#!forum/retro-comp)
 
 General features include:
 
-  - Banked memory services for several banking designs
-  - Disk drivers for RAM, ROM, Floppy, IDE, CF, and SD
-  - Serial drivers including UART (16550-like), ASCI, ACIA, SIO
-  - Video drivers including TMS9918, SY6545, MOS8563, HD6445
-  - Real time clock drivers including DS1302, BQ4845
-  - Multiple OS support including CP/M 2.2, ZSDOS, CP/M 3, ZPM3
-  - Built-in VT-100 terminal emulation support
+-   Banked memory services for several banking designs
+-   Disk drivers for RAM, ROM, Floppy, IDE, CF, and SD
+-   Serial drivers including UART (16550-like), ASCI, ACIA, SIO
+-   Video drivers including TMS9918, SY6545, MOS8563, HD6445
+-   Real time clock drivers including DS1302, BQ4845
+-   Multiple OS support including CP/M 2.2, ZSDOS, CP/M 3, ZPM3
+-   Built-in VT-100 terminal emulation support
 
 RomWBW is distributed as both source code and pre-built ROM and disk
 images. Some of the provided software can be launched directly from the
 ROM firmware itself:
 
-  - System Monitor
-  - Operating Systems (CP/M 2.2, ZSDOS)
-  - ROM BASIC (Nascom BASIC and Tasty BASIC)
-  - ROM Forth
+-   System Monitor
+-   Operating Systems (CP/M 2.2, ZSDOS)
+-   ROM BASIC (Nascom BASIC and Tasty BASIC)
+-   ROM Forth
 
 A dynamic disk drive letter assignment mechanism allows mapping
 operating system drive letters to any available disk media.
@@ -111,22 +111,22 @@ directory contains the pre-built ROM and disk images. The ROM image
 files all end in “.rom”. Based on the table below, **carefully** pick
 the appropriate ROM image for your hardware.
 
-| Platform  | ROM Image File  |   Baud | Description                                     |
-| --------- | --------------- | -----: | ----------------------------------------------- |
-| SBC       | SBC\_std.rom    |  38400 | RetroBrew SBC v1 or v2 ECB Z80                  |
-| Zeta V1   | ZETA\_std.rom   |  38400 | RetroBrew Zeta V1 Z80, ParPortProp (optional)   |
-| Zeta V2   | ZETA2\_std.rom  |  38400 | RetroBrew Zeta V2 Z80, ParPortProp (optional)   |
-| N8        | N8\_std.rom     |  38400 | RetroBrew N8 Z180, date code \>= 2312           |
-| Mark IV   | MK4\_std.rom    |  38400 | RetroBrew Mark IV ECB Z180                      |
-| RC Z80    | RCZ80\_std.rom  | 115200 | RC2014 w/ Z80 CPU, requires 512K RAM/ROM module |
-| RC Z180\* | RCZ180\_ext.rom | 115200 | RC2014 w/ Z180 CPU & 512K banked RAM/ROM module |
-| RC Z180\* | RCZ180\_nat.rom | 115200 | RC2014 w/ Z180 CPU & 512K native RAM/ROM module |
-| Easy Z80  | EZZ80\_std.rom  | 115200 | Sergey Kiselev’s Easy Z80                       |
-| SC126     | SCZ180\_126.rom | 115200 | Stephen Cousin’s SC126 Z180                     |
-| SC130     | SCZ180\_130.rom | 115200 | Stephen Cousin’s SC130 Z180                     |
-| SC131     | SCZ180\_131.rom | 115200 | Stephen Cousin’s SC131 Z180                     |
-| Dyno      | DYNO\_std.rom   |  38400 | Steve Garcia’s Z180 Dyno Computer               |
-| MBC       | MBC\_std.rom    |  38400 | Andrew Lynch’s Multi Board Computer             |
+| Platform  | ROM Image File |   Baud | Description                                     |
+|-----------|----------------|-------:|-------------------------------------------------|
+| SBC       | SBC_std.rom    |  38400 | RetroBrew SBC v1 or v2 ECB Z80                  |
+| Zeta V1   | ZETA_std.rom   |  38400 | RetroBrew Zeta V1 Z80, ParPortProp (optional)   |
+| Zeta V2   | ZETA2_std.rom  |  38400 | RetroBrew Zeta V2 Z80, ParPortProp (optional)   |
+| N8        | N8_std.rom     |  38400 | RetroBrew N8 Z180, date code \>= 2312           |
+| Mark IV   | MK4_std.rom    |  38400 | RetroBrew Mark IV ECB Z180                      |
+| RC Z80    | RCZ80_std.rom  | 115200 | RC2014 w/ Z80 CPU, requires 512K RAM/ROM module |
+| RC Z180\* | RCZ180_ext.rom | 115200 | RC2014 w/ Z180 CPU & 512K banked RAM/ROM module |
+| RC Z180\* | RCZ180_nat.rom | 115200 | RC2014 w/ Z180 CPU & 512K native RAM/ROM module |
+| Easy Z80  | EZZ80_std.rom  | 115200 | Sergey Kiselev’s Easy Z80                       |
+| SC126     | SCZ180_126.rom | 115200 | Stephen Cousin’s SC126 Z180                     |
+| SC130     | SCZ180_130.rom | 115200 | Stephen Cousin’s SC130 Z180                     |
+| SC131     | SCZ180_131.rom | 115200 | Stephen Cousin’s SC131 Z180                     |
+| Dyno      | DYNO_std.rom   |  38400 | Steve Garcia’s Z180 Dyno Computer               |
+| MBC       | MBC_std.rom    |  38400 | Andrew Lynch’s Multi Board Computer             |
 
 \*The RC2014 Z180 requires a separate RAM/ROM memory module. There are
 two types of these modules and you must pick the ROM for your type of
@@ -164,7 +164,7 @@ applications. This provides a simple environment for learning to use
 your system. Be aware that files saved to the RAM disk (A:) will
 disappear at the next power on (RAM is generally not persistent). Also
 note that attempts to save files to the ROM disk (B:) will fail because
-ROM is not writable.
+ROM is not writable under normal circumstances.
 
 # General Usage
 
@@ -185,7 +185,7 @@ disk devices.
 The following ROM applications are available at the boot loader prompt:
 
 | Application  |                                                        |
-| ------------ | ------------------------------------------------------ |
+|--------------|--------------------------------------------------------|
 | Monitor      | Z80 system debug monitor w/ Intel Hex loader           |
 | Forth        | Brad Rodriguez’s ANSI compatible Forth language        |
 | Basic        | Nascom 8K BASIC language                               |
@@ -209,10 +209,10 @@ modular approach to implementing device drivers and presenting devices
 to the operating system. In general, all devices are classified as one
 of the following:
 
-  - Disk (Hard Disk, CF Card, SD Card, RAM/ROM Disk, etc.)
-  - Character (Serial Ports, Parallel Ports, etc.)
-  - Video (Video Display/Keyboard Interfaces)
-  - RTC/NVRAM (Real Time Clock, Non-volatile RAM)
+-   Disk (Hard Disk, CF Card, SD Card, RAM/ROM Disk, etc.)
+-   Character (Serial Ports, Parallel Ports, etc.)
+-   Video (Video Display/Keyboard Interfaces)
+-   RTC/NVRAM (Real Time Clock, Non-volatile RAM)
 
 HBIOS uses the concept of unit numbers to present a complex set of
 hardware devices to the operating system. As an example, a typical
@@ -262,6 +262,34 @@ If your system has an RTC/NVRAM device, it will not be listed in the
 unit summary table. Since only a single RTC/NVRAM device can exist in
 one system, unit numbers are not required nor used for this type of
 device.
+
+## Changing Console and Console speed
+
+Your system can support a number of devices for the console. They may be
+VDU type devices or serial devices. If you want to change which device
+is the console, the ***I*** menu option can be used to choose the unit
+and it’s speed.
+
+The command format is `I <u> [<c>]`
+
+where ***u*** is unit to select and ***c*** is the optional baud rate
+code as listed below.
+
+     Code |   Rate   | Code |   Rate   | Code |   Rate   | Code |   Rate   |
+    ------|----------|------|----------|------|----------|------|----------|
+       0  |      75  |   8  |    1800  |  16  |   28880  |  24  |  460800  |
+       1  |     150  |   9  |    2400  |  17  |   38400  |  25  |  614400  |
+       2  |     225  |  10  |    3600  |  18  |   57600  |  26  |  921600  |
+       3  |     300  |  11  |    4800  |  19  |   76800  |  27  | 1228822  |
+       4  |     450  |  12  |    7200  |  20  |  115200  |  28  | 1843200  |
+       5  |     600  |  13  |    9600  |  21  |  153600  |  29  | 2457600  |
+       6  |     900  |  14  |   14400  |  22  |  230400  |  30  | 3686400  |
+       7  |    1200  |  15  |   19200  |  23  |  307200  |  31  | 7372800  |
+    ------------------------------------------------------------------------
+
+Example: To change current console to 9600 baud
+
+    I 0 13
 
 ## Drive Letter Assignment
 
@@ -330,7 +358,7 @@ messages meaning the first IDE device. To refer to the fourth slice of
 IDE0, you would type “IDE0:3”. Here are some examples:
 
 |          |                              |
-| -------- | ---------------------------- |
+|----------|------------------------------|
 | `IDE0:0` | First slice of disk in IDE0  |
 | `IDE0:`  | First slice of disk in IDE0  |
 | `IDE0:3` | Fourth slice of disk in IDE0 |
@@ -374,28 +402,29 @@ The following custom applications are found on the ROM disk and are,
 therefore, globally available.
 
 | Application | Description                                                                                          |
-| ----------- | ---------------------------------------------------------------------------------------------------- |
+|-------------|------------------------------------------------------------------------------------------------------|
 | ASSIGN      | Add, change, and delete drive letter assignments. Use ASSIGN /? for usage instructions.              |
 | SYSCOPY     | Copy system image to a device to make it bootable. Use SYSCOPY with no parms for usage instructions. |
 | MODE        | Reconfigures serial ports dynamically.                                                               |
 | FDU         | Format and test floppy disks. Menu driven interface.                                                 |
-| FORMAT      | Will someday be a command line tool to format floppy disks. Currently does nothing\!                 |
+| FORMAT      | Will someday be a command line tool to format floppy disks. Currently does nothing!                  |
 | XM          | XModem file transfer program adapted to hardware. Automatically uses primary serial port on system.  |
 | FLASH       | Will Sowerbutts’ in-situ ROM programming utility.                                                    |
 | FDISK80     | John Coffman’s Z80 hard disk partitioning tool. See documentation in Doc directory.                  |
 | TALK        | Direct console I/O to a specified character device.                                                  |
 | RTC         | Manage and test the Real Time Clock hardware.                                                        |
 | TIMER       | Display value of running periodic system timer.                                                      |
-| INTTEST     | Test interrupt vector hooking.                                                                       |
+| CPUSPD      | Change the running CPU speed and wait states of the system.                                          |
 
 Some custom applications do not fit on the ROM disk. They are found on
 the disk image files or the individual files can be found in the
-Binary\\Apps directory of the distribution.
+Binary\Apps directory of the distribution.
 
 | Application | Description                                                 |
-| ----------- | ----------------------------------------------------------- |
+|-------------|-------------------------------------------------------------|
 | TUNE        | Play .PT2, .PT3, .MYM audio files.                          |
 | FAT         | Access MS-DOS FAT filesystems from RomWBW (based on FatFs). |
+| INTTEST     | Test interrupt vector hooking.                              |
 
 Additional documentation on all of these applications can be found in
 “RomWBW Applications.pdf” in the Doc directory of the distribution.
@@ -460,7 +489,7 @@ of drive letters assigned to the disk media you have installed. Here is
 an example of this:
 
     Configuring Drives...
-    
+
        A:=MD1:0
        B:=MD0:0
        C:=IDE0:0
@@ -548,10 +577,10 @@ you want CP/M 2.2 instead, you would replace `B:ZSYS.SYS` with
 `B:CPM.SYS`. Here is a full example of this process.
 
     B>SYSCOPY C:=B:ZSYS.SYS
-    
+
     SYSCOPY v2.0 for RomWBW CP/M, 17-Feb-2020 (CP/M 2 Mode)
     Copyright 2020, Wayne Warthen, GNU GPL v3
-    
+
     Transfer system image from B:ZSYS.SYS to C: (Y/N)? Y
     Reading image... Writing image... Done
 
@@ -592,26 +621,26 @@ The following table shows the disk image files available. Note that the
 images in the “Hard” column are fine for use on CF Cards, SD Cards, as
 well as real spinning hard disks.
 
-| Floppy        | Hard          | Description                  |
-| ------------- | ------------- | ---------------------------- |
-| fd\_cpm22.img | hd\_cpm22.img | DRI CP/M 2.2 boot disk       |
-| fd\_zsdos.img | hd\_zsdos.img | ZSDOS 1.1 boot disk          |
-| fd\_nzcom.img | hd\_nzcom.img | NZCOM boot disk              |
-| fd\_cpm3      | hd\_cpm3.img  | DRI CP/M 3 boot disk         |
-| fd\_zpm3      | hd\_zpm3.img  | ZPM3 boot disk               |
-| fd\_ws4       | hd\_ws4.img   | WordStar v4 application disk |
+| Floppy       | Hard         | Description                  |
+|--------------|--------------|------------------------------|
+| fd_cpm22.img | hd_cpm22.img | DRI CP/M 2.2 boot disk       |
+| fd_zsdos.img | hd_zsdos.img | ZSDOS 1.1 boot disk          |
+| fd_nzcom.img | hd_nzcom.img | NZCOM boot disk              |
+| fd_cpm3.img  | hd_cpm3.img  | DRI CP/M 3 boot disk         |
+| fd_zpm3.img  | hd_zpm3.img  | ZPM3 boot disk               |
+| fd_ws4.img   | hd_ws4.img   | WordStar v4 application disk |
 
 In addition to the disk images above, there is also a special hard disk
-image called hd\_combo.img. This image contains all of the images above,
+image called hd_combo.img. This image contains all of the images above,
 but in a single image with 6 slices. At the boot loader prompt, you can
 choose a disk with the combo image, then select the specific slice you
 want. This allows a single disk to have all of the possible operating
 system options.
 
-This is the layout of the hd\_combo disk image:
+This is the layout of the hd_combo disk image:
 
 | Slice   | Description                  |
-| ------- | ---------------------------- |
+|---------|------------------------------|
 | Slice 0 | DRI CP/M 2.2 boot disk       |
 | Slice 1 | ZSDOS 1.1 boot disk          |
 | Slice 2 | NZCOM boot disk              |
@@ -650,17 +679,17 @@ can `SYSCOPY` and boot alternate slices. Here is what you would see when
 booting to a disk device:
 
     MARK IV Boot Loader
-    
+
     ROM: (M)onitor (C)P/M (Z)-System (F)orth (B)ASIC (T)-BASIC (P)LAY (U)SER ROM
     Disk: (0)MD1 (1)MD0 (2)IDE0 (3)IDE1
-    
+
     Boot Selection? 2    Slice(0-9)[0]?
-    
+
     Booting Disk Unit 2, Slice 0...
-    
+
     Reading disk information...
     Loc=D000 End=FE00 Ent=E600 Label=Unlabeled Drive
-    
+
     Loading...
 
 Following this, you would see the normal operating system startup
@@ -668,14 +697,14 @@ messages. However, your operating system prompt will be `A>` and when
 you look at the drive letter assignments, you should see that A: has
 been assigned to the disk you selected to boot.
 
-If you receive the error message “Disk not bootable\!”, you have either
+If you receive the error message “Disk not bootable!”, you have either
 failed to properly run `SYSCOPY` on the target disk or you have selected
 the wrong disk/slice.
 
 Note that although MD1 (RAM disk) and MD0 (ROM disk) drives are listed
 in the Disk boot line, they are not “bootable” disks because they have
 no system tracks on them. Attempting to boot to one of them, will fail
-with a “Disk not bootable\!” error message and return to the loader
+with a “Disk not bootable!” error message and return to the loader
 prompt.
 
 # Operating Systems
@@ -709,16 +738,16 @@ most stable and you are less likely to encounter problems.
 
 ### Notes
 
-  - You can change media, but it must be done while at the OS command
+-   You can change media, but it must be done while at the OS command
     prompt and you **must** warm start CP/M by pressing ctrl-c. This is
     a CP/M 2.2 constraint and is well documented in the DRI manuals.
 
-  - The original versions of DDT, DDTZ, and ZSID used the RST 38 vector
+-   The original versions of DDT, DDTZ, and ZSID used the RST 38 vector
     which conflicts with interrupt mode 1 use of this vector. The DDT,
     DDTZ, and ZSID applications in RomWBW have been modified to use RST
     30 to avoid this issue.
 
-  - Z-System applications will not run under CP/M 2.2. For example, the
+-   Z-System applications will not run under CP/M 2.2. For example, the
     `LDDS` date stamper will not run.
 
 ## ZSDOS 1.1
@@ -737,12 +766,12 @@ Manual.pdf”).
 
 ### Notes
 
-  - Although most CP/M 2.2 applications will run under Z-System, some
+-   Although most CP/M 2.2 applications will run under Z-System, some
     may not work as expected. The best example is PIP which is not aware
     of the ZSDOS paths and will fail in some scenarios (use `COPY`
     instead).
 
-  - Although ZSDOS can recognize a media change in some cases, it will
+-   Although ZSDOS can recognize a media change in some cases, it will
     not always work. You should only change media at a command prompt
     and be sure to warm start the OS with a ctrl-c.
 
@@ -765,7 +794,7 @@ RomWBW Doc directory.
 
 ### Notes
 
-  - There is no `DIR` command, you must use `SDZ` instead. If you don’t
+-   There is no `DIR` command, you must use `SDZ` instead. If you don’t
     like this, look into the ALIAS facility.
 
 ## Digital Research CP/M 3
@@ -782,15 +811,15 @@ tracks. `CPMLDR.SYS` chain loads `CPM3.SYS`.
 
 ### Notes
 
-  - The `DATE` command cannot yet be used to **set** the RTC. The RTC is
+-   The `DATE` command cannot yet be used to **set** the RTC. The RTC is
     used to read the current date/time for file stamping, etc. You can
     use the `RTC` app to set the RTC clock.
 
-  - The `COPYSYS` command described in the DRI CP/M 3 documentation is
+-   The `COPYSYS` command described in the DRI CP/M 3 documentation is
     not provided with RomWBW. The RomWBW `SYSCOPY` command is used
     instead.
 
-  - Although CP/M 3 is generally able to run CP/M 2.2 programs, this is
+-   Although CP/M 3 is generally able to run CP/M 2.2 programs, this is
     not universally true. This is especially true of the utility
     programs included with the operating system. For example, the
     `SUBMIT` program of CP/M 3 is completely different from the `SUBMIT`
@@ -801,14 +830,16 @@ tracks. `CPMLDR.SYS` chain loads `CPM3.SYS`.
 ZPM3 is an interesting combination of the features of both CP/M 3 and
 ZCPR 3. Essentially, it has the features of and compatibility with both.
 
-Like CP/M 3, to make ZPM3 boot disk, you put CPMLDR.SYS on the system
+Like CP/M 3, to make ZPM3 boot disk, you put ZPMLDR.SYS on the system
 tracks of the disk.
 
 ### Notes
 
-  - `ZPMLDR` is included with ZPM3, but it is not working correctly.
+-   `ZPMLDR` is equivalent to CPMLDR. Both are included. Previously,
+    ZPMLDR had issues that prevented it from properly booting RomWBW
+    ZPM3. However, those issues have been resolved.
 
-  - The ZPM operating system is contained in the file called CPM3.SYS
+-   The ZPM operating system is contained in the file called CPM3.SYS
     which is confusing, but this is as intended by the ZPM3
     distribution. I believe it was done this way to make it easier for
     users to transition from CP/M 3 to ZPM3.
@@ -893,7 +924,7 @@ documents.
 Note that the build scripts for RomWBW create the default disk images
 supplied with RomWBW. It is relatively easy to customize the contents of
 the disk images that are part of RomWBW. This is described in more
-detail in the Source\\Images directory of the distribution.
+detail in the Source\Images directory of the distribution.
 
 ## FAT Filesystem Transfers
 
@@ -914,15 +945,15 @@ however. Longer filenames will show up as a truncated version.
 
 The `FAT` application is not on your ROM disk because it is too large to
 fit. You will find it on all of the pre-built disk images as well as in
-the Binary\\Apps directory of the distribution.
+the Binary\Apps directory of the distribution.
 
 For advanced users, it is possible to create a hybrid disk that contains
 CP/M slices at the beginning and a FAT filesystem after. Such a hybrid
 disk can be used to boot an operating system and still have access to
 FAT files on the FAT portion of the disk. David Reese has prepared a
 document describing how to do this. It is called
-“SC126\_How-To\_No\_2\_Preparing\_an\_SD\_Card\_for\_Use\_with\_SC126\_Rev\_1-5.pdf”
-and can be found in the Doc\\Contrib directory of the distribution.
+“SC126_How-To_No_2\_Preparing_an_SD_Card_for_Use_with_SC126_Rev_1-5.pdf”
+and can be found in the Doc\Contrib directory of the distribution.
 
 # Startup Command Processing
 
@@ -983,7 +1014,7 @@ The standard RomWBW distribution includes it’s own hardware BIOS.
 However, RomWBW can alternatively be constructed with UNA as the
 hardware BIOS portion of the ROM. If you wish to use the UNA variant of
 RomWBW, then just program your ROM with the ROM image called
-“UNA\_std.rom” in the Binary directory. This one image is suitable on
+“UNA_std.rom” in the Binary directory. This one image is suitable on
 **all** of the platforms and hardware UNA supports.
 
 UNA is customized dynamically using a ROM based setup routine and the
@@ -996,10 +1027,10 @@ images.
 While John is likely to enhance UNA over time, there are currently a few
 things that UNA does not support:
 
-  - Floppy Drives
-  - Terminal Emulation
-  - Zeta 1, N8, RC2014, Easy Z80, and Dyno Systems
-  - Some older support boards
+-   Floppy Drives
+-   Terminal Emulation
+-   Zeta 1, N8, RC2014, Easy Z80, and Dyno Systems
+-   Some older support boards
 
 The UNA version embedded in RomWBW is the latest production release of
 UNA. RomWBW will be updated with John’s upcoming UNA release with
@@ -1022,12 +1053,14 @@ Prior to attempting to reprogram your actual ROM chip, you may wish to
 “try” the upgrade. With RomWBW, you can upload a new system image
 executable and load it from the command line. For each ROM image file
 (.rom) in the Binary directory, you will also find a corresponding
-application file (.com). For example, for SBC\_std.rom, there is also an
-SBC\_std.com file. You can upload the .com file to your system using
+application file (.com). For example, for SBC_std.rom, there is also an
+SBC_std.com file. You can upload the .com file to your system using
 XModem, then simply run the .com file. You will see your system go
 through the normal startup process just like it was started from ROM.
 However, your ROM has not been updated and the next time you boot your
 system, it will revert to the system image contained in ROM.
+
+## Upgrading via Flash Utility
 
 If you do not have easy access to a ROM programmer, it is usually
 possible to reprogram your system ROM using the FLASH utility from Will
@@ -1042,20 +1075,20 @@ following is a typical example of transferring ROM image using XModem
 and flashing the chip in-situ.
 
     E>xm r rom.rom
-    
+
     XMODEM v12.5 - 07/13/86
     RBC, 28-Aug-2019 [WBW], ASCI
-    
+
     Receiving: E0:ROM.IMG
     7312k available for uploads
     File open - ready to receive
     To cancel: Ctrl-X, pause, Ctrl-X
-    
+
     Thanks for the upload
-    
+
     E>flash write rom.rom
     FLASH4 by Will Sowerbutts <will@sowerbutts.com> version 1.2.3
-    
+
     Using RomWBW (v2.6+) bank switching.
     Flash memory chip ID is 0xBFB7: 39F040
     Flash memory has 128 sectors of 4096 bytes, total 512KB
@@ -1068,6 +1101,23 @@ programming or ROM image could result in a non-functional system.
 To confirm your ROM chip has been successfully updated, restart your
 system and boot an operating system from ROM. Do not boot from a disk
 device yet. Review the boot messages to see if any issues have occurred.
+
+## Upgrading via XModem Flash Updater
+
+Similar to using the Flash utility, the system ROM can be updated or
+upgraded through the ROM based updater utility. This works by by
+reprogrammed the flash ROM as the file is being transfered.
+
+This has the advantage that secondary storage is not required to hold
+the new image.
+
+From the Boot Loader menu select X (Xmodem Flash Updater) and then U
+(Begin Update). Then initiate the Xmodem transfer of the .img or .upd
+file.
+
+More information can be found in the ROM Applications document.
+
+## Post Upgrade System Image and Application Update Process
 
 Once you are satisfied that the ROM is working well, you will need to
 update the system images and RomWBW custom applications on your disk
@@ -1086,71 +1136,70 @@ If the disk is bootable, you need to update the system image on the disk
 using the procedure described below corresponsing to the operating
 system on your disk.
 
-  - **CP/M 2.2**
-    
+-   **CP/M 2.2**
+
     Boot to CP/M 2.2 from ROM, then use `SYSCOPY` to update the system
     image on **all** CP/M 2.2 boot disks/slices. The CP/M 2.2 system
     image is called CPM.SYS and is found on the ROM disk. For example:
-    
+
     `B>SYSCOPY C:=CPM.SYS`
 
-  - **ZSDOS**
-    
+-   **ZSDOS**
+
     Boot to Z-System from ROM, then use `SYSCOPY` to update the system
     image on **all** ZSDOS boot disks/slices. The ZSDOS system image is
     called ZSYS.SYS and is found on the ROM disk. For example:
-    
+
     `B>SYSCOPY C:=ZSYS.SYS`
 
-  - **NZCOM**
-    
+-   **NZCOM**
+
     NZCOM runs on top of either CP/M 2.2 or ZSDOS. By default, the
     RomWBW disk image for NZCOM uses ZSDOS. Follow the corresponding
     procedure above to update the system image on the NZCOM boot
     disks/slices.
 
-  - **CP/M 3**
-    
+-   **CP/M 3**
+
     CP/M 3 uses a multi-step boot process involving multiple files. The
     CP/M 3 boot files are not included on the ROM disk due to space
     constraints. You will need to transfer the files to your system from
-    the RomWBW distribution directory Binary\\CPM3.
-    
+    the RomWBW distribution directory Binary\CPM3.
+
     After this is done, you will need to use `SYSCOPY` to place the CP/M
     3 loader image on the boot tracks of all CP/M 3 boot disks/slices.
     The loader image is called `CPMLDR.SYS`. You must then copy (at a
     minimum) `CPM3.SYS` and `CCP.COM` onto the disk/slice. Assuming you
     copied the CP/M 3 boot files onto your RAM disk at A:, you would
     use:
-    
+
         A>B:SYSCOPY C:=CPMLDR.SYS
         A>B:COPY CPM3.SYS C:
         A>B:COPY CCP.COM C:
 
-  - **ZPM3**
-    
+-   **ZPM3**
+
     ZPM3 uses a multi-step boot process involving multiple files. The
     ZPM3 boot files are not included on the ROM disk due to space
     constraints. You will need to transfer the files to your system from
-    the RomWBW distribution directory Binary\\ZPM3.
-    
+    the RomWBW distribution directory Binary\ZPM3.
+
     After this is done, you will need to use `SYSCOPY` to place the ZPM3
     loader image on the boot tracks of all ZPM3 boot disks/slices. The
-    loader image is called `CPMLDR.SYS`. You must then copy (at a
+    loader image is called `ZPMLDR.SYS`. You must then copy (at a
     minimum) `CPM3.SYS`, `ZCCP.COM`, `ZINSTAL.ZPM`, and `STARTZPM.COM`
     onto the disk/slice. Assuming you copied the ZPM3 boot files onto
     your RAM disk at A:, you would use:
-    
-        A>B:SYSCOPY C:=CPMLDR.SYS
+
+        A>B:SYSCOPY C:=ZPMLDR.SYS
         A>B:COPY CPM3.SYS C:
         A>B:COPY ZCCP.COM C:
         A>B:COPY ZINSTAL.ZPM C:
         A>B:COPY STARTZPM.COM C:
-    
-    You may be wondering if the references to `CPMLDR.SYS` and
-    `CPM3.SYS` are typos. They are not. ZPM3 uses the same loader image
-    as CPM3. The ZPM3 main system code file is called `CPM3.SYS` which
-    is the same name as CP/M 3 uses, but the file contents are not the
+
+    You may be wondering if the reference to `CPM3.SYS` is a typo. It is
+    not. The ZPM3 main system code file is called `CPM3.SYS` which is
+    the same name as CP/M 3 uses, but the file contents are not the
     same.
 
 Finally, if you have copies of any of the RomWBW custom applications on
@@ -1158,31 +1207,30 @@ your hard disk, you need to update them with the latest copies. The
 following applications are found on your ROM disk. Use COPY to copy them
 over any older versions of the app on your disk:
 
-  - ASSIGN.COM
-  - SYSCOPY.COM
-  - MODE.COM
-  - FDU.COM (was FDTST.COM)
-  - FORMAT.COM
-  - XM.COM
-  - FLASH.COM
-  - FDISK80.COM
-  - TALK.COM
-  - RTC.COM
-  - TIMER.COM
-  - INTTEST.COM
+-   ASSIGN.COM
+-   SYSCOPY.COM
+-   MODE.COM
+-   FDU.COM (was FDTST.COM)
+-   FORMAT.COM
+-   XM.COM
+-   FLASH.COM
+-   FDISK80.COM
+-   TALK.COM
+-   RTC.COM
+-   TIMER.COM
+-   INTTEST.COM
 
 For example: `B>COPY ASSIGN.COM C:`
 
 Some RomWBW custom applications are too large to fit on the ROM disk. If
 you are using any of these you will need to transfer them to your system
 and then update all copies. These applications are found in the
-Binary\\Apps directory of the distribution and in all of the disk
-images.
+Binary\Apps directory of the distribution and in all of the disk images.
 
-  - FAT.COM
-  - TUNE.COM
+-   FAT.COM
+-   TUNE.COM
 
-# System Update
+## System Update
 
 If the system running ROMWBW utilizes the SST39SF040 Flash chip then it
 is possible to do a System Update in place of a System Upgrade in some
@@ -1194,10 +1242,10 @@ and CP/M system.
 A System Update may be more favorable than a System Upgrade in cases
 such as:
 
-  - Overwriting of the ROM drive is not desired.
-  - Space is unavailable to hold a full ROMWBW ROM.
-  - To mimimize time taken to transfer and flash a full ROM.
-  - Configuration changes are only minor and do not impact disk
+-   Overwriting of the ROM drive is not desired.
+-   Space is unavailable to hold a full ROMWBW ROM.
+-   To mimimize time taken to transfer and flash a full ROM.
+-   Configuration changes are only minor and do not impact disk
     applications.
 
 The ROMWBW build process generates a system upgrade file along with the
@@ -1208,9 +1256,9 @@ extension “.rom” and be 512Kb or 1024Kb in size.
 Transferring and flashing the System Update is accomplished in the same
 manner as described above in *Upgrading* with the required difference
 being that the flash application needs to be directed to complete a
-partial flash using the /p command line switch.
+partial flash using the /P command line switch.
 
-`E>flash write rom.upd /p`
+`E>FLASH WRITE ROM.UPD /P`
 
 # RomWBW Distribution
 
@@ -1227,12 +1275,12 @@ set of directories. Each of these directories has it’s own ReadMe.txt
 file describing the contents in detail. In summary, these directories
 are:
 
-| Application | Description                                                                                                                             |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Binary      | The final output files of the build process are placed here. Most importantly, are the ROM images with the file names ending in “.rom”. |
-| Doc         | Contains various detailed documentation including the operating systems, RomWBW architecture, etc.                                      |
-| Source      | Contains the source code files used to build the software and ROM images.                                                               |
-| Tools       | Contains the MS Windows programs that are used by the build process or that may be useful in setting up your system.                    |
+| Application | Description                                                                                                                         |
+|-------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Binary      | The final output files of the build process are placed here. Most importantly, the ROM images with the file names ending in “.rom”. |
+| Doc         | Contains various detailed documentation including the operating systems, RomWBW architecture, etc.                                  |
+| Source      | Contains the source code files used to build the software and ROM images.                                                           |
+| Tools       | Contains the MS Windows programs that are used by the build process or that may be useful in setting up your system.                |
 
 # Acknowledgments
 
@@ -1240,7 +1288,7 @@ While I have heavily modified much of the code, I want to acknowledge
 that much of the work is derived from the work of others in the
 RetroBrew Computers Community including Andrew Lynch, Dan Werner, Max
 Scane, David Giles, John Coffman, and probably many others I am not
-clearly aware of (let me know if I omitted someone\!).
+clearly aware of (let me know if I omitted someone!).
 
 I especially want to credit Douglas Goodall for contributing code, time,
 testing, and advice. He created an entire suite of application programs
@@ -1249,34 +1297,77 @@ continue the maintenance of these applications and they have become
 unusable due to changes within RomWBW. As of RomWBW 2.6, these
 applications are no longer provided.
 
-  - David Giles contributed support for the CSIO support in the SD Card
+-   David Giles contributed support for the CSIO support in the SD Card
     driver.
-  - Ed Brindley contributed some of the code that supports the RC2014
+-   Ed Brindley contributed some of the code that supports the RC2014
     platform.
-  - Phil Summers contributed Forth and BASIC in ROM, the AY-3-8910 sound
-    driver as well as a long list of general code enhancements.
-  - Phillip Stevens contributed support for FreeRTOS.
-  - Curt Mayer contributed the Linux / MacOS build process.
-  - UNA BIOS and FDISK80 are the products of John Coffman.
-  - FLASH4 is a product of Will Sowerbutts.
-  - CLRDIR is a product of Max Scane.
-  - Tasty Basic is a product of Dimitri Theulings.
-  - Dean Netherton contributed the sound driver interface and the
+-   Phil Summers contributed the Forth and BASIC adaptations in ROM, the
+    AY-3-8910 sound driver as well as a long list of general code
+    enhancements.
+-   Phillip Stevens contributed support for FreeRTOS.
+-   Curt Mayer contributed the original Linux / MacOS build process.
+-   UNA BIOS and FDISK80 are the products of John Coffman.
+-   FLASH4 is a product of Will Sowerbutts.
+-   CLRDIR is a product of Max Scane.
+-   Tasty Basic is a product of Dimitri Theulings.
+-   Dean Netherton contributed the sound driver interface and the
     SN76489 sound driver.
-  - The RomWBW Disk Catalog document was produced by Mykl Orders.
+-   The RomWBW Disk Catalog document was produced by Mykl Orders.
 
 Contributions of all kinds to RomWBW are very welcome.
+
+# Licensing
+
+RomWBW is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+RomWBW is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along
+with RomWBW. If not, see <https://www.gnu.org/licenses/>.
+
+Portions of RomWBW were created by, contributed by, or derived from the
+work of others. It is believed that these works are being used in
+accordance with the intentions and/or licensing of their creators.
+
+If anyone feels their work is being used outside of it’s intended
+licensing, please notify:
+
+> Wayne Warthen  
+> wwarthen@gmail.com
+
+RomWBW is an aggregate work. It is composed of many individual,
+standalone programs that are distributed as a whole to function as a
+cohesive system. Each program may have it’s own licensing which may be
+different from other programs within the aggregate.
+
+In some cases, a single program (e.g., CP/M Operating System) is
+composed of multiple components with different licenses. It is believed
+that in all such cases the licenses are compatible with GPL version 3.
+
+RomWBW encourages code contributions from others. Contributors may
+assert their own copyright in their contributions by annotating the
+contributed source code appropriately. Contributors are further
+encouraged to submit their contributions via the RomWBW source code
+control system to ensure their contributions are clearly documented.
+
+All contributions to RomWBW are subject to this license.
 
 # Getting Assistance
 
 The best way to get assistance with RomWBW or any aspect of the
 RetroBrew Computers projects is via the community forums:
 
-  - [RetroBrew Computers
+-   [RetroBrew Computers
     Forum](https://www.retrobrewcomputers.org/forum/)
-  - [RC2014 Google
+-   [RC2014 Google
     Group](https://groups.google.com/forum/#!forum/rc2014-z80)
-  - [retro-comp Google
+-   [retro-comp Google
     Group](https://groups.google.com/forum/#!forum/retro-comp)
 
 Submission of issues and bugs are welcome at the [RomWBW GitHub

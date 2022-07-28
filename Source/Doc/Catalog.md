@@ -1,50 +1,7 @@
-!include(Common.inc)
-!def(document)(Disk Catalog)
-!def(author)(Mykl Orders)
----
-title: |
-   | !product
-   | Version !ver
-   |
-   | !document
-author: !author (mailto:!authmail)
-date: !date
-institution: !orgname
-documentclass: article
-classoption:
- - oneside
-toc: true
-papersize: letter
-geometry:
- - top=1.5in
- - bottom=1.5in
- - left=1.0in
- - right=1.0in
-# - showframe
-linestretch: 1.25
-colorlinks: true
-fontfamily: helvet
-fontsize: 12pt
-header-includes:
- - |
-   ```{=latex}
-   \usepackage{fancyhdr}
-   \usepackage{xhfill}
-   \renewcommand*{\familydefault}{\sfdefault}
-   \setstretch{1.25} % for TOC
-   ```
----
-
-```{=latex}
-\clearpage
-\pagestyle{fancyplain}
-\fancyhf{}
-\pagenumbering{arabic}
-\lhead{\fancyplain{}{\nouppercase{\footnotesize \bfseries \leftmark \hfill !product  !document}}}
-\lfoot{\small RetroBrew Computing Group ~~ {\xrfill[3pt]{1pt}[cyan]} ~~ \thepage}
-```
-
-`\clearpage`{=latex}
+$define{doc_title}{Disk Catalog}$
+$define{doc_author}{Mykl Orders}$
+$define{doc_authmail}{}$
+$include{"Common.h"}$
 
 # RomWBW Distribution File Catalog
 

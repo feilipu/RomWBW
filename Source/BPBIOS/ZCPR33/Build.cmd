@@ -1,18 +1,11 @@
 @echo off
 setlocal
 
-set PATH=%PATH%;..\..\..\Tools\zx;..\..\..\Tools\cpmtools;
+set PATH=%PATH%;..\..\..\Tools\zxcc;..\..\..\Tools\cpmtools;
 
-set ZXBINDIR=../../../tools/cpm/bin/
-set ZXLIBDIR=../../../tools/cpm/lib/
-set ZXINCDIR=../../../tools/cpm/include/
+set CPMDIR80=%TOOLS%/cpm/
 
-copy ..\z3baset.lib . || exit /b
-zx ZMAC -zcpr33t.z80 -/P || exit /b
-del z3baset.lib || exit /b
-move zcpr33t.rel .. || exit /b
-
-copy ..\z3basen.lib . || exit /b
-zx ZMAC -zcpr33n.z80 -/P || exit /b
-del z3basen.lib || exit /b
-move zcpr33n.rel .. || exit /b
+copy ..\z3base.lib . || exit /b
+zxcc ZMAC -zcpr33.z80 -/P || exit /b
+del z3base.lib || exit /b
+move zcpr33.rel .. || exit /b

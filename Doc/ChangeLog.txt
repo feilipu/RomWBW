@@ -51,6 +51,19 @@ Version 3.1.1
 - WBW: Added ROM verification to boot process
 - WBW: Added Z80 instruction test apps to user area 5 in CP/M & ZSDOS
 - WBW: Add support for LINC sound card
+- WBW: Add interrupt receive support to UART driver
+- PMS: Add XModem transfer within Debug Monitor
+- PMS & AJL: Add DMAMON test application
+- PMS: Add ZMP adaptation
+- LWN: Substantial BPBIOS cleanup
+- AJL: Add ZMD adaptation
+- D?T: Substantial update to TastyBasic incuding a .COM executable
+- PMS: Added VGM audio file player
+- WBW: ZPMLDR and ZPM3 fixes, credit to Lars Nelson for finding ZPM3 source!
+- DDW: Add support for MBC sound card
+- WBW: Add support for "romless" booting
+- L?N: Fixes for ZCPR-D&J (buffer overflow, default drive/user)
+- J?P: Add support for DS1501 RTC
 
 Version 3.1
 -----------

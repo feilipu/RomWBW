@@ -7,7 +7,7 @@ include $(TOOLS)/Makefile.inc
 .SHELLFLAGS = -ce
 
 ROMAPPS1 := assign mode rtc syscopy xm
-ROMAPPS2 := fdu format survey sysgen talk timer inttest
+ROMAPPS2 := fdu format survey sysgen talk timer cpuspd
 
 rom256_%.dat: ROMSIZ=256
 rom512_%.dat: ROMSIZ=512
@@ -23,8 +23,8 @@ rom512_%.dat rom1024_%.dat: ROMAPPS=$(ROMAPPS1) $(ROMAPPS2)
 rom%_wbw.dat: BIOS=wbw
 rom%_una.dat: BIOS=una
 
-rom128%.dat:
-	>$@
+rom128_%.dat:
+	touch $@
 
 %.dat:
 	### Making ROM Disk $@

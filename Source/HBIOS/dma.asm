@@ -1,10 +1,6 @@
 ;==================================================================================================
-; Z80 DMA DRIVER FOR ECB-DMA
+; Z80 DMA DRIVER
 ;==================================================================================================
-;
-; DUE TO LOW CLOCK SPEED CONTRAINTS OF Z80 DMA CHIP, THE HALF CLOCK FACILITY 
-; IS USED DURING DMA PROGRAMMING AND CONTINUOUS BLOCK TRANSFERS.
-; TESTING CONDUCTED ON A SBC-V2-005 @ 10Mhz
 ;
 DMA_CONTINUOUS			.equ 	%10111101	; + Pulse
 DMA_BYTE			.equ 	%10011101	; + Pulse
@@ -26,7 +22,44 @@ DMA_RESET			.equ	$c3
 ;DMA_ENABLE_AFTER_RETI		.equ	$b7
 ;DMA_REINIT_STATUS_BYTE		.equ	$8b
 ;
-DMA_FBACK			.equ	TRUE
+DMA_FBACK			.equ	TRUE	; ALLOW FALLBACK TO SOFTWARE
+DMA_USEHS			.equ	TRUE	; USE CLOCK DIVIDER
+;
+DMA_RDY				.EQU	%00001000
+DMA_FORCE			.EQU	0
+
+#IF (DMA_USEHS & (DMAMODE=DMAMODE_MBC))
+;;;#IF (CPUSPDDEF=SPD_HIGH)
+;;;#DEFINE DMAIOSLO LD A,(HB_RTCVAL) \ AND %11110111 \ OUT (RTCIO),A 
+;;;#DEFINE DMAIONOR PUSH AF \ LD A,(HB_RTCVAL) \ OR %00001000 \ OUT (RTCIO),A \ POP AF
+;;;#ELSE
+;;;#DEFINE DMAIOSLO \;
+;;;#DEFINE DMAIONOR \;
+;;;#ENDIF
+
+#DEFINE DMAIOSLO LD A,(HB_RTCVAL) \ AND ~%00001000 \ OUT (RTCIO),A
+#DEFINE DMAIONOR PUSH AF \ LD A,(HB_RTCVAL) \ OUT (RTCIO),A \ POP AF
+
+#ENDIF
+;
+#IF (DMA_USEHS & (DMAMODE=DMAMODE_ECB))
+;;;#IF (CPUSPDDEF=SPD_HIGH)
+;;;#DEFINE DMAIOSLO LD A,(HB_RTCVAL) \ OR  %00001000 \ OUT (RTCIO),A 
+;;;#DEFINE DMAIONOR PUSH AF \ LD A,(HB_RTCVAL) \ AND %11110111 \ OUT (RTCIO),A \ POP AF
+;;;#ELSE
+;;;#DEFINE DMAIOSLO \;
+;;;#DEFINE DMAIONOR \;
+;;;#ENDIF
+
+#DEFINE DMAIOSLO LD A,(HB_RTCVAL) \ OR %00001000 \ OUT (RTCIO),A 
+#DEFINE DMAIONOR PUSH AF \ LD A,(HB_RTCVAL) \ OUT (RTCIO),A \ POP AF
+
+#ENDIF
+
+#IF (!DMA_USEHS)
+#DEFINE DMAIOSLO \;
+#DEFINE DMAIONOR \;
+#ENDIF
 ;
 ;==================================================================================================
 ; DMA INITIALIZATION CODE
@@ -38,12 +71,10 @@ DMA_INIT:
 	LD	A, DMABASE
 	CALL	PRTHEXBYTE
 ;
-	xor	a
+	LD	A,DMA_FORCE
 	out	(DMABASE+1),a		; force ready off
 ;
-	ld	a,(RTCVAL)
-	or	%00001000		; half
-	out	(RTCIO),a		; clock
+	DMAIOSLO
 ;
 	call	DMAProbe		; do we have a dma?
 	jr	nz,DMA_NOTFOUND
@@ -58,11 +89,8 @@ DMA_INIT:
 	xor	a			; set status
 ;
 DMA_EXIT:
-	push	af
-	ld	a,(RTCVAL)
-	and	%11110111		; full
-	out	(RTCIO),a		; clock
-	pop	af
+	DMAIONOR
+
 	ret
 ;
 DMA_NOTFOUND:
@@ -132,7 +160,7 @@ DMACode		;.db	DMA_DISABLE	; R6-Command Disable DMA
 		.dw	0 		; R4-Port B, Destination address
 		.db	%00001100	; R4-Pulse byte follows, Pulse generated
 		.db	0		; R4-Pulse offset
-		.db	%10011010 	; R5-Stop on end of block, ce/wait multiplexed, READY active HIGH
+		.db	%10010010+DMA_RDY; R5-Stop on end of block, ce/wait multiplexed, READY active config
 		.db	DMA_LOAD 	; R6-Command Load
 ;		.db	DMA_FORCE_READY	; R6-Command Force ready
 ;		.db	DMA_ENABLE 	; R6-Command Enable DMA
@@ -151,9 +179,8 @@ DMALDIR:
 	ld	b,DMACopy_Len		; dma command
 	ld	c,DMABASE		; block
 ;
-	ld	a,(RTCVAL)
-	or	%00001000		; half
-	out	(RTCIO),a		; clock
+	DMAIOSLO
+;
 	di
 	otir				; load and execute dma
 	ei
@@ -164,11 +191,8 @@ DMALDIR:
 	and	%00111011		; if failed
 	sub	%00011011
 
-	push	af
-	ld	a,(RTCVAL)
-	and	%11110111		; full
-	out	(RTCIO),a		; clock
-	pop	af
+	DMAIONOR
+
 	ret
 ;
 DMACopy 	;.db	DMA_DISABLE	; R6-Command Disable DMA
@@ -182,7 +206,7 @@ DMALength	.dw	0 		; R0-Block length
 DMADest		.dw	0 		; R4-Port B, Destination address
 		.db	%00001100	; R4-Pulse byte follows, Pulse generated
 		.db	0		; R4-Pulse offset
-;		.db	%10011010 	; R5-Stop on end of block, ce/wait multiplexed, READY active HIGH
+;		.db	%10010010+DMA_RDY;R5-Stop on end of block, ce/wait multiplexed, READY active config
 		.db	DMA_LOAD 	; R6-Command Load
 		.db	DMA_FORCE_READY	; R6-Command Force ready
 		.db	DMA_ENABLE 	; R6-Command Enable DMA
@@ -201,9 +225,8 @@ DMAOTIR:
 	ld	b,DMAOut_Len		; dma command
 	ld	c,DMABASE		; block
 ;
-	ld	a,(RTCVAL)
-	or	%00001000		; half
-	out	(RTCIO),a		; clock
+	DMAIOSLO
+
 	di
 	otir				; load and execute dma
 	ei
@@ -214,11 +237,8 @@ DMAOTIR:
 	and	%00111011		; if failed
 	sub	%00011011
 ;
-	push	af
-	ld	a,(RTCVAL)
-	and	%11110111		; full
-	out	(RTCIO),a		; clock
-	pop	af
+	DMAIONOR
+
 	ret
 ;
 DMAOutCode  	;.db	DMA_DISABLE	; R6-Command Disable DMA
@@ -235,7 +255,7 @@ DMAOutDest	.db	0 		; R4-Port B, Destination port
 ;		.db	%00001100	; R4-Pulse byte follows, Pulse generated
 ;		.db	0		; R4-Pulse offset
 
-		.db	%10011010 	; R5-Stop on end of block, ce/wait multiplexed, READY active HIGH	
+		.db	%10010010+DMA_RDY;R5-Stop on end of block, ce/wait multiplexed, READY active config	
 		.db	DMA_LOAD 	; R6-Command Load							
 		.db	%00000101	; R0-Port A is Source							
 		.db	DMA_LOAD 	; R6-Command Load							
@@ -256,9 +276,8 @@ DMAINIR:
 	ld	b,DMAIn_Len		; dma command
 	ld	c,DMABASE		; block
 ;
-	ld	a,(RTCVAL)
-	or	%00001000		; half
-	out	(RTCIO),a		; clock
+	DMAIOSLO
+;
 	di
 	otir				; load and execute dma
 	ei
@@ -269,11 +288,8 @@ DMAINIR:
 	and	%00111011		; if failed
 	sub	%00011011
 ;
-	push	af
-	ld	a,(RTCVAL)
-	and	%11110111		; full
-	out	(RTCIO),a		; clock
-	pop	af
+	DMAIONOR
+;
 	ret
 ;
 DMAInCode 	;.db	DMA_DISABLE	; R6-Command Disable DMA
@@ -287,7 +303,7 @@ DMAInLength	.dw	0 		; R0-Block length
 DMAInSource	.db	0 		; R4-Port B, Destination port
 ;		.db	%00001100	; R4-Pulse byte follows, Pulse generated
 ;		.db	0		; R4-Pulse offset
-		.db	%10011010 	; R5-Stop on end of block, ce/wait multiplexed, READY active HIGH	
+		.db	%10010010+DMA_RDY;R5-Stop on end of block, ce/wait multiplexed, READY active config	
 		.db	DMA_LOAD 	; R6-Command Load							
 		.db	DMA_FORCE_READY	; R6-Command Force ready						
 		.db	DMA_ENABLE 	; R6-Command Enable DMA							
@@ -295,7 +311,7 @@ DMAInSource	.db	0 		; R4-Port B, Destination port
 DMAIn_Len 	.equ	$-DMAInCode
 ;
 ;==================================================================================================
-; DEBUG - READ START, DESTINATION AN COUNT REGISTERS
+; DEBUG - READ START, DESTINATION AND COUNT REGISTERS
 ;==================================================================================================
 ;
 #IF (0)
